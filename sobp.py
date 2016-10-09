@@ -18,22 +18,24 @@ class SOBP:
         for p in plist:
             # todo: multiplying by coefficients and shifting(?)
             if temp_peak is not None:
-                if np.array_equal(temp_peak.x, p.data_dict()["bp"].x):
-                    temp_peak.y += p.data_dict()["bp"].y * p.data_dict()["properties"]["height"]
+                if np.array_equal(temp_peak.x, p["bp"].x):
+                    temp_peak.y += p["bp"].y * p["properties"]["height"]
                     logger.debug(
-                        "\t(calc. SOBP) Got BraggPeak with position %.2f and height %.2f" % (
-                            p.data_dict()["properties"]["position"],
-                            p.data_dict()["properties"]["height"])
+                        "\t(calc. SOBP) Got BraggPeak with primary position %.2f, shifted position %.2f, height %.2f" % (
+                            p["properties"]["primary_position"],
+                            p["properties"]["shifted_position"],
+                            p["properties"]["height"])
                     )
                 else:
                     raise ValueError("Inconsistent domains!")
             else:
-                temp_peak = p.data_dict()["bp"]
-                temp_peak.y *= p.data_dict()["properties"]["height"]
+                temp_peak = p["bp"]
+                temp_peak.y *= p["properties"]["height"]
                 logger.debug(
-                    "\t(calc. SOBP) Got BraggPeak with position %.2f and height %.2f" % (
-                        p.data_dict()["properties"]["position"],
-                        p.data_dict()["properties"]["height"])
+                    "\t(calc. SOBP) Got BraggPeak with primary position %.2f, shifted position %.2f, height %.2f" % (
+                        p["properties"]["primary_position"],
+                        p["properties"]["shifted_position"],
+                        p["properties"]["height"])
                 )
         temp_peak.rescale(temp_peak.y.max())
         return temp_peak

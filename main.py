@@ -22,8 +22,8 @@ double_peak.rescale(double_peak.y.max())
 
 
 logger.info("Creating BraggPeaks for tests...")
-w = bragg_peak.BraggPeak(double_peak, 1, 0.5)
-q = bragg_peak.BraggPeak(bp, 2, 0.7)
+w = bragg_peak.BraggPeak(double_peak, 1, 1, 0.5)
+q = bragg_peak.BraggPeak(bp, 2, 2, 0.7)
 
 logger.info("Creating SOBP for tests...")
 d = sobp.SOBP([w, q, w])
