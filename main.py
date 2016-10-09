@@ -28,6 +28,6 @@ q = bragg_peak.BraggPeak(bp, 2, 2, 0.7)
 logger.info("Creating SOBP for tests...")
 d = sobp.SOBP([w, q, w])
 
-logger.debug("New SOBP:\n%s\nx axis:\n%s\ny axis:\n%s" % (d.sobp, d.sobp.x, d.sobp.y))
+logger.debug("New SOBP:\n%s" % d.sobp)
 
 logger.info("Chi^2 = %.4f\non mesh:\n%s" % (d.calc_on_mesh(mesh), mesh))

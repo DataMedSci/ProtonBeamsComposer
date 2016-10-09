@@ -1,5 +1,8 @@
 import logging
+
 import numpy as np
+
+import beprof
 
 logger = logging.getLogger(__name__)
 
@@ -14,34 +17,30 @@ class SOBP:
 
     @staticmethod
     def calc_sobp(plist):
-        temp_peak = None
+        recalculated_peaks = []
         for p in plist:
-            # todo: multiplying by coefficients and shifting(?)
-            if temp_peak is not None:
-                if np.array_equal(temp_peak.x, p["bp"].x):
-                    temp_peak.y += p["bp"].y * p["properties"]["height"]
-                    logger.debug(
-                        "\t(calc. SOBP) Got BraggPeak with primary position %.2f, shifted position %.2f, height %.2f" % (
-                            p["properties"]["primary_position"],
-                            p["properties"]["shifted_position"],
-                            p["properties"]["height"])
-                    )
-                else:
-                    raise ValueError("Inconsistent domains!")
-            else:
-                temp_peak = p["bp"]
-                temp_peak.y *= p["properties"]["height"]
-                logger.debug(
-                    "\t(calc. SOBP) Got BraggPeak with primary position %.2f, shifted position %.2f, height %.2f" % (
-                        p["properties"]["primary_position"],
-                        p["properties"]["shifted_position"],
-                        p["properties"]["height"])
-                )
-        temp_peak.rescale(temp_peak.y.max())
-        return temp_peak
+            primary = p["properties"]["primary_position"]
+            shifted = p["properties"]["shifted_position"]
+            height = p["properties"]["height"]
+            # if primary != shifted ?? some a-b<delta
+            temp_x = p["bp"].x + (shifted - primary)
+            temp_y = p["bp"].y * p["properties"]["height"]
+            temp_peak = beprof.profile.Profile(np.array([temp_x, temp_y]).T)
+            # normalize?
+            temp_peak.rescale(temp_peak.y.max())
+            # todo: is it all mandatory?... improve - sum to one Profile
+            recalculated_peaks.append(temp_peak)
+            logger.debug(
+                "\t(calc. SOBP) Got BraggPeak with primary position %.2f, shifted position %.2f, height %.2f" %
+                (primary, shifted, height)
+            )
+        return recalculated_peaks
 
     def val(self, x):
-        return self.sobp.y_at_x(x)
+        temp_val = 0
+        for p in self.sobp:
+            temp_val += p.y_at_x(x)
+        return temp_val
 
     def calc_on_mesh(self, mesh_array):
         """Calc chi^2 on given mesh"""

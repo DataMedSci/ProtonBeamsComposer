@@ -21,6 +21,7 @@ class BraggPeak:
             primary_position, shifted_position, height, bragg_peak))
 
     # todo: add more class methods like __len__, __setitem__
+    # https://docs.python.org/3/reference/datamodel.html
     def __repr__(self):
         return repr(self.bp_data)
 
