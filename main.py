@@ -7,9 +7,8 @@ import beprof.profile
 import bragg_peak
 import sobp
 
-# logging.basicConfig(format='%(levelname)-8s->    %(message)s', level=logging.DEBUG)
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logging.basicConfig(format='%(levelname)-8s->    %(message)s', level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 bp = beprof.profile.Profile([(0, 0), (1, 0), (2, 0.2), (3, 0.5), (4, 1), (5, 0.2), (6, 0), (7, 0)])
