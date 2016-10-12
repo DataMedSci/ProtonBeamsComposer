@@ -23,7 +23,12 @@ class SOBP:
             shifted = p["properties"]["shifted_position"]
             height = p["properties"]["height"]
             # if primary != shifted ?? some a-b<delta
-            temp_x = p["bp"].x + (shifted - primary)
+            if abs(primary - shifted) > 0.0001:
+                temp_x = p["bp"].x + (shifted - primary)
+                logger.debug("Shifting by %.4f" % (shifted - primary))
+            else:
+                temp_x = p["bp"].x
+                logger.debug("No shifting required.")
             temp_y = p["bp"].y * p["properties"]["height"]
             temp_peak = beprof.profile.Profile(np.array([temp_x, temp_y]).T)
             # normalize?

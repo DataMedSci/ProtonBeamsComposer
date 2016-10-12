@@ -3,9 +3,7 @@ import logging
 import numpy as np
 
 import beprof.profile
-
-import bragg_peak
-import sobp
+from pbc import bragg_peak, sobp
 
 logging.basicConfig(format='%(levelname)-8s->    %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
