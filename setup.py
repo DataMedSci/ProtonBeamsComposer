@@ -115,11 +115,11 @@ setuptools.setup(
     name='pbc',
     version=get_version(),
     packages=['pbc'],
-    url='https://github.com/DataMedSci/ProtonBeamComposer',
+    url='https://github.com/DataMedSci/ProtonBeamsComposer',
     license='GPL',
     author='Aga Rudnicka',
     author_email='ant6ant@gmail.com',
-    description='TODO',
+    description='Proton Beams Composer library',
     long_description=readme + '\n',
     classifiers=[
         # How mature is this project? Common values are

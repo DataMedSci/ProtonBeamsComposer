@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# ProtonBeamComposer documentation build configuration file, created by
+# ProtonBeamsComposer documentation build configuration file, created by
 # sphinx-quickstart
 #
 # This file is execfile()d with the current directory set to its
@@ -146,7 +146,7 @@ html_theme = 'default'
 
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
-#html_title = 'ProtonBeamComposer v'
+#html_title = 'ProtonBeamsComposer v'
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #html_short_title = None
