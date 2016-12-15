@@ -4,7 +4,6 @@ versioneer
 pytest<3.0 ; python_version >= '3.2' and python_version < '3.3' or os_name == 'nt' # py 3.2
 pytest ; python_version < '3.0' and python_version >= '3.3' and os_name != 'nt' # py different than 3.2
 pytest-capturelog
-pytest-sugar
 pytest-timeout
 pytest-xdist
 tox
