@@ -36,7 +36,7 @@ Overview
     :alt: Travis-CI Build Status
     :target: https://travis-ci.org/DataMedSci/ProtonBeamComposer
 
-.. |appveyor| image:: https://ci.appveyor.com/api/projects/status/github/ant6/ProtonBeamComposer?branch=master&svg=true
+.. |appveyor| image:: https://ci.appveyor.com/api/projects/status/s79mhc2pi9ly3dam?svg=true
     :alt: Appveyor Build Status
     :target: https://ci.appveyor.com/project/ant6/ProtonBeamComposer
 
