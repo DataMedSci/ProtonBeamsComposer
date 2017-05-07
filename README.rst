@@ -51,7 +51,7 @@ Unstable version, directly GIT repository, using::
 
 To unistall, simply use::
 
-    pip uninstall beprof
+    pip uninstall pbc
 
 Documentation
 =============
