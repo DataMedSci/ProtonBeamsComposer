@@ -34,7 +34,7 @@ if __name__ == '__main__':
 
     # load file with positions and weights
     with open(sys.argv[2]) as pos_file:
-        pos_we_data = pd.read_csv(sys.argv[2], sep=';')
+        pos_we_data = pd.read_csv(pos_file, sep=';')
 
     print("\nLoaded pos/weights from file: %s\n" % sys.argv[2])
 
