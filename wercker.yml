@@ -1,4 +1,20 @@
-box: python:3.6
+test-python27:
+  box: python:2.7
+  steps:
+    - pip-install:
+        requirements_file: "requirements.txt"
+        extra_args: "-rtests/requirements-test.txt"
+
+    # checking python version
+    - script:
+        name: echo python information
+        code: |
+          echo "python version $(python --version) running"
+          echo "pip version $(pip --version) running"
+    - script:
+        name: run pytest
+        code: python -m pytest
+
 
 test-python36:
   box: python:3.6
