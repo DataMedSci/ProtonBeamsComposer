@@ -1,0 +1,18 @@
+box: python:3.6
+
+test-python36:
+  box: python:3.6
+  steps:
+    - pip-install:
+        requirements_file: "requirements.txt"
+        extra_args: "-rProtonBeamsComposer/tests/requirements-test.txt"
+
+    # checking python version
+    - script:
+        name: echo python information
+        code: |
+          echo "python version $(python --version) running"
+          echo "pip version $(pip --version) running"
+    - script:
+        name: run pytest
+        code: python -m pytest

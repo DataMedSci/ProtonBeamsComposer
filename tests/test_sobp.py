@@ -8,7 +8,7 @@ from pbc.sobp import SOBP
 
 
 class TestSOBPInit(unittest.TestCase):
-    with open(join("..", "bp.csv"), 'r') as bp_file:
+    with open(join("bp.csv"), 'r') as bp_file:
         data = pd.read_csv(bp_file, sep=';')
 
     x_peak = data[data.columns[0]].as_matrix()
