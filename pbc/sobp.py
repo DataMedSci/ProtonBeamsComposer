@@ -3,8 +3,6 @@ import logging
 import numpy as np
 import matplotlib.pyplot as plt
 
-import beprof
-
 from pbc.bragg_peak import BraggPeak
 
 logging.basicConfig(level=0)
