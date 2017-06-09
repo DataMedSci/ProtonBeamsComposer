@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class BraggPeak:
     def __init__(self, bp_domain, bp_vals):
         if len(bp_domain) != len(bp_vals):
-            raise ValueError("Domain and vals have different lenghts!")
+            raise ValueError("Domain and values have different lengths!")
         self.spline = interpolate.InterpolatedUnivariateSpline(bp_domain, bp_vals, ext=3)
         self.initial_position = bp_domain[np.array(bp_vals).argmax()]
         self.current_position = self.initial_position
