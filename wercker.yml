@@ -5,7 +5,7 @@ test-python36:
   steps:
     - pip-install:
         requirements_file: "requirements.txt"
-        extra_args: "-rProtonBeamsComposer/tests/requirements-test.txt"
+        extra_args: "-rtests/requirements-test.txt"
 
     # checking python version
     - script:
