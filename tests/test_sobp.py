@@ -23,12 +23,12 @@ class TestSOBPInit(unittest.TestCase):
     def test_empty(self):
         with self.assertRaises(TypeError) as e:
             SOBP()
-        assert "__init__() missing 1 required positional argument: 'bragg_peaks'" in str(e.exception)
+        assert "__init__()" in str(e.exception), "Got: %s" % e.exception
 
     def test_empty_list(self):
         with self.assertRaises(ValueError) as e:
             SOBP([])
-        assert "Unsupported init data." in str(e.exception)
+        assert "Unsupported init data." in str(e.exception), "Got: %s" % e.exception
 
     def test_single_peak_no_params(self):
         s = SOBP([self.a])
@@ -45,5 +45,6 @@ class TestSOBPInit(unittest.TestCase):
 
     def test_invalid_peak_list(self):
         with self.assertRaises(TypeError) as e:
-            s = SOBP([1, 2, 3])
-        assert "Peak list should consist of BraggPeak objects!" in str(e.exception)
+            SOBP([1, 2, 3])
+        assert "Peak list should consist of BraggPeak objects!" in str(e.exception),\
+            "Got: %s" % e.exception

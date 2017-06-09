@@ -7,20 +7,17 @@ class TestBraggPeakInit(unittest.TestCase):
     def test_empty(self):
         with self.assertRaises(TypeError) as e:
             BraggPeak()
-        assert "__init__() missing 2 required positional arguments: 'bp_domain' and 'bp_vals'" in str(e.exception), \
-            "Got: %s" % e.exception
+        assert "__init__()" in str(e.exception), "Got: %s" % e.exception
 
     def test_single_empty_list(self):
         with self.assertRaises(TypeError) as e:
             BraggPeak([])
-        assert "__init__() missing 1 required positional argument: 'bp_vals'" in str(e.exception), \
-            "Got: %s" % e.exception
+        assert "__init__()" in str(e.exception), "Got: %s" % e.exception
 
     def test_double_empty_list(self):
         with self.assertRaises(Exception) as e:
             BraggPeak([], [])
-        assert "(m>k) failed for hidden m: fpcurf0:m=0" in str(e.exception), \
-            "Got: %s" % e.exception
+        assert "failed" in str(e.exception), "Got: %s" % e.exception
 
     def test_unequal_lists(self):
         with self.assertRaises(ValueError) as e:
@@ -36,18 +33,15 @@ class TestBraggPeakInit(unittest.TestCase):
     def test_too_short_lists(self):
         with self.assertRaises(Exception) as e:
             BraggPeak([1], [1])
-        assert "(m>k) failed for hidden m: fpcurf0:m=1" in str(e.exception), \
-            "Got: %s" % e.exception
+        assert "failed" in str(e.exception), "Got: %s" % e.exception
 
         with self.assertRaises(Exception) as e:
             BraggPeak([1, 2], [1, 1])
-        assert "(m>k) failed for hidden m: fpcurf0:m=2" in str(e.exception), \
-            "Got: %s" % e.exception
+        assert "failed" in str(e.exception), "Got: %s" % e.exception
 
         with self.assertRaises(Exception) as e:
             BraggPeak([1, 2, 3], [1, 1, 1])
-        assert "(m>k) failed for hidden m: fpcurf0:m=3" in str(e.exception), \
-            "Got: %s" % e.exception
+        assert "failed" in str(e.exception), "Got: %s" % e.exception
 
     def test_min_len_lists(self):
         a = BraggPeak([1, 2, 3, 4], [1, 1, 1, 1])
