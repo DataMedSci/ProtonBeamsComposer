@@ -10,7 +10,7 @@ logging.basicConfig(level=0)
 logger = logging.getLogger(__name__)
 
 
-class SOBP:
+class SOBP(object):
     def __init__(self, bragg_peaks, param_list=None):
         """
         If param_list=None assume bp is a list of BraggPeak instances.

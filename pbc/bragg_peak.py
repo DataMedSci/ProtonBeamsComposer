@@ -8,14 +8,14 @@ logging.basicConfig(level=0)
 logger = logging.getLogger(__name__)
 
 
-class BraggPeak:
+class BraggPeak(object):
     def __init__(self, bp_domain, bp_vals):
         if len(bp_domain) != len(bp_vals):
             raise ValueError("Domain and values have different lengths!")
         self.spline = interpolate.InterpolatedUnivariateSpline(bp_domain, bp_vals, ext=3)
         self.initial_position = bp_domain[np.array(bp_vals).argmax()]
         self.current_position = self.initial_position
-        self.weight = 1.0
+        self._weight = 1.0
         logger.debug("Creating BraggPeak...\nPrimary max position: %f\n"
                      "Calculated spline:\n%s"
                      % (self.initial_position, self.spline))
@@ -54,7 +54,7 @@ class BraggPeak:
 
     def evaluate(self, x_arr):
         """Evaluate for given domain"""
-        return self.weight * self.spline(x_arr + self.initial_position - self.current_position)
+        return self._weight * self.spline(x_arr + self.initial_position - self.current_position)
 
     def get_spread_idx(self, x_arr, val):
         """
