@@ -22,11 +22,16 @@ class BraggPeak:
 
     # todo: add more class methods like __len__, __setitem__
     # https://docs.python.org/3/reference/datamodel.html
+    def __str__(self):
+        return str("{0} with position: {1} and weight: {2}".format(
+                   self.__class__.__name__, self.position, self.weight))
+
     def __repr__(self):
         return repr(self.spline)
 
-    def __getitem__(self, item):
-        return self.spline(item)
+    def __getitem__(self, point):
+        """Returns value for given x axis point"""
+        return self.spline(point)
 
     @property
     def position(self):
@@ -42,7 +47,10 @@ class BraggPeak:
 
     @weight.setter
     def weight(self, new_weight):
-        self._weight = new_weight
+        if 0 <= new_weight <= 1:
+            self._weight = new_weight
+        else:
+            raise ValueError("Weight should be from 0.0 to 1.0")
 
     def evaluate(self, x_arr):
         """Evaluate for given domain"""
@@ -71,6 +79,14 @@ class BraggPeak:
 
     def spread_at_90(self, x_arr):
         ll, rr = self.get_spread_idx(x_arr, 0.9)
+        return x_arr[ll], x_arr[rr]
+
+    def range(self, x_arr):
+        return self.spread_at_90(x_arr)[1]
+
+    def fwhm(self, x_arr):
+        """Full width af half-maximum"""
+        ll, rr = self.get_spread_idx(x_arr, 0.5)
         return x_arr[ll], x_arr[rr]
 
 
