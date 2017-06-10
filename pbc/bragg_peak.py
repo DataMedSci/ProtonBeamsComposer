@@ -47,7 +47,7 @@ class BraggPeak:
 
     @weight.setter
     def weight(self, new_weight):
-        if 0 <= new_weight <= 1:
+        if 0.0 <= new_weight and new_weight <= 1.0:
             self._weight = new_weight
         else:
             raise ValueError("Weight should be from 0.0 to 1.0")
