@@ -1,4 +1,5 @@
 import logging
+from copy import copy
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -27,7 +28,12 @@ class SOBP:
                 logger.error("List should contain only BraggPeak instances!")
                 raise
         elif isinstance(bragg_peaks, BraggPeak) and param_list:
-            pass
+            self.component_peaks = []
+            for pos, wei in param_list:
+                tmp_peak = copy(bragg_peaks)
+                tmp_peak.position = pos
+                tmp_peak.weight = wei
+                self.component_peaks.append(tmp_peak)
         else:
             raise ValueError('Unsupported init data.')
 
