@@ -48,6 +48,28 @@ class BraggPeak:
         """Evaluate for given domain"""
         return self._weight * self.spline(x_arr + self.initial_position - self.current_position)
 
+    def get_spread_idx(self, x_arr, val):
+        """
+        For single peak this should find closest value to given
+        on the left and right side of BraggPeak.
+
+        This functions splits search domain in two parts to ensure
+        two different points from left and right side of the peak.
+
+        :param x_arr - search domain
+        :param val - desired value
+        """
+        arr = self.evaluate(x_arr)
+        left = arr[:arr.argmax()]
+        right = arr[arr.argmax():]
+        merge_idx = arr.argmax()
+        i_left = (np.abs(left - val)).argmin()
+        i_right = (np.abs(right - val)).argmin()
+        return i_left, merge_idx + i_right, arr[i_left], arr[merge_idx + i_right]
+
+    def spread_90(self, x_arr):
+        return self.get_spread_idx(x_arr, 0.9)
+
 
 if __name__ == '__main__':
     from os.path import join
@@ -58,16 +80,6 @@ if __name__ == '__main__':
 
     x_peak = data[data.columns[0]].as_matrix()
     y_peak = data[data.columns[1]].as_matrix()
-
-    # load file with positions and weights
-    with open(join("..", "pos.txt"), "r") as pos_file:
-        pos_we_data = pd.read_csv(pos_file, sep=';')
-
-    positions = pos_we_data['position'].as_matrix()
-    weights = pos_we_data['weight'].as_matrix()
-
-    print("Positions: %s" % positions)
-    print("Weights: %s " % weights)
 
     a = BraggPeak(x_peak, y_peak)
 
