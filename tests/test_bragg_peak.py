@@ -72,10 +72,10 @@ class TestBraggPeakFunctions(unittest.TestCase):
         self.bp.weight = .55
         self.assertAlmostEqual(self.bp.weight, .55)
         with self.assertRaises(ValueError) as e:
-            self.bp.weight = -0.000001
+            self.bp.weight = -0.1
         assert "Weight" in str(e.exception)
         with self.assertRaises(ValueError) as e:
-            self.bp.weight = 1.000001
+            self.bp.weight = 1.1
         assert "Weight" in str(e.exception)
 
     def test_evaluate(self):

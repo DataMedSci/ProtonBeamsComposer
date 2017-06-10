@@ -54,7 +54,7 @@ class BraggPeak:
 
     def evaluate(self, x_arr):
         """Evaluate for given domain"""
-        return self._weight * self.spline(x_arr + self.initial_position - self.current_position)
+        return self.weight * self.spline(x_arr + self.initial_position - self.current_position)
 
     def get_spread_idx(self, x_arr, val):
         """
@@ -88,6 +88,10 @@ class BraggPeak:
         """Full width af half-maximum"""
         ll, rr = self.get_spread_idx(x_arr, 0.5)
         return x_arr[ll], x_arr[rr]
+
+    def modulation(self, x_arr, val):
+        """Distance from left to right for given threshold val"""
+        pass
 
 
 if __name__ == '__main__':
