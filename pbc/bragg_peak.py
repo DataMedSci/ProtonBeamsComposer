@@ -47,10 +47,10 @@ class BraggPeak:
 
     @weight.setter
     def weight(self, new_weight):
-        if 0.0 <= new_weight and new_weight <= 1.0:
-            self._weight = new_weight
-        else:
+        if new_weight < 0.0 or new_weight > 1.0:
             raise ValueError("Weight should be from 0.0 to 1.0")
+        else:
+            self._weight = new_weight
 
     def evaluate(self, x_arr):
         """Evaluate for given domain"""
@@ -89,9 +89,10 @@ class BraggPeak:
         ll, rr = self.get_spread_idx(x_arr, 0.5)
         return x_arr[ll], x_arr[rr]
 
-    def modulation(self, x_arr, val):
+    def modulation(self, x_arr, val=0.9):
         """Distance from left to right for given threshold val"""
-        pass
+        ll, rr = self.get_spread_idx(x_arr, val)
+        return x_arr[rr] - x_arr[ll]
 
 
 if __name__ == '__main__':
@@ -113,5 +114,3 @@ if __name__ == '__main__':
     kle = a.evaluate(test_domain)
     plt.plot(test_domain, kle)
     plt.show()
-
-    print(a.get_spread_idx(x_peak, 0.9))

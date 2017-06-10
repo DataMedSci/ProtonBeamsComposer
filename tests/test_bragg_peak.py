@@ -72,7 +72,7 @@ class TestBraggPeakFunctions(unittest.TestCase):
         self.bp.weight = .55
         self.assertAlmostEqual(self.bp.weight, .55)
         with self.assertRaises(ValueError) as e:
-            self.bp.weight = -0.1
+            self.bp.weight = -1.0
         assert "Weight" in str(e.exception)
         with self.assertRaises(ValueError) as e:
             self.bp.weight = 1.1
@@ -100,3 +100,10 @@ class TestBraggPeakFunctions(unittest.TestCase):
         dom = np.arange(0, 10, 0.01)
         self.assertAlmostEqual(self.bp.fwhm(dom)[0], 5.35)
         self.assertAlmostEqual(self.bp.fwhm(dom)[1], 8.6)
+
+    def test_modulation(self):
+        dom = np.arange(0, 10, 0.01)
+        self.assertAlmostEqual(self.bp.modulation(dom), 1.12)
+        self.assertAlmostEqual(self.bp.modulation(dom, 0.9), 1.12)
+        self.assertAlmostEqual(self.bp.modulation(dom, 0.8), 1.62)
+        self.assertAlmostEqual(self.bp.modulation(dom, 0.5), 3.25)
