@@ -14,8 +14,15 @@ class SOBP:
     def __init__(self, bragg_peaks, param_list=None):
         """
         If param_list=None assume bp is a list of BraggPeak instances.
+
         If param_list is given assume bp is a single BraggPeak and param_list
-            contains positions of it with weights.
+            contains positions of it with weights. This list should be formatted
+            like this:
+                param_list = [[pos1, wei1], [pos2, wei2], ...]
+            e.g.
+                param_list = [[10, 0.8], [12, 0.75], [15.5, 0.3]]
+            The above will generate a SOBP with 3 peaks with positions and weights
+            from param_list.
         """
         if isinstance(bragg_peaks, list) and len(bragg_peaks) > 0 and not param_list:
             try:
@@ -38,9 +45,11 @@ class SOBP:
             raise ValueError('Unsupported init data.')
 
     def __repr__(self):
+        """Return a list of positions of SOPB peaks"""
         return repr([p.position for p in self.component_peaks])
 
     def overall_sum(self, domain):
+        """Calculate sum of peaks included in SOBP using given domain"""
         tmp_sobp = []
         for peak in self.component_peaks:
             tmp_peak = peak.evaluate(domain)
