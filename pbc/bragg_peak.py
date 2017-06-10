@@ -59,16 +59,19 @@ class BraggPeak:
         :param x_arr - search domain
         :param val - desired value
         """
-        arr = self.evaluate(x_arr)
-        left = arr[:arr.argmax()]
-        right = arr[arr.argmax():]
-        merge_idx = arr.argmax()
-        i_left = (np.abs(left - val)).argmin()
-        i_right = (np.abs(right - val)).argmin()
-        return i_left, merge_idx + i_right, arr[i_left], arr[merge_idx + i_right]
+        val_arr = self.evaluate(x_arr)
+        if val > val_arr.max():
+            raise ValueError('Desired values cannot be greater than max in BraggPeak!')
+        merge_idx = val_arr.argmax()
+        left = val_arr[:merge_idx]
+        right = val_arr[merge_idx:]
+        idx_left = (np.abs(left - val)).argmin()
+        idx_right = (np.abs(right - val)).argmin()
+        return idx_left, merge_idx + idx_right
 
-    def spread_90(self, x_arr):
-        return self.get_spread_idx(x_arr, 0.9)
+    def spread_at_90(self, x_arr):
+        ll, rr = self.get_spread_idx(x_arr, 0.9)
+        return x_arr[ll], x_arr[rr]
 
 
 if __name__ == '__main__':
@@ -83,10 +86,12 @@ if __name__ == '__main__':
 
     a = BraggPeak(x_peak, y_peak)
 
-    a.weight = .75
+    a.weight = .95
     a.position = 12.5
 
     test_domain = np.arange(0, 30, .1)
     kle = a.evaluate(test_domain)
     plt.plot(test_domain, kle)
     plt.show()
+
+    print(a.get_spread_idx(x_peak, 0.9))
