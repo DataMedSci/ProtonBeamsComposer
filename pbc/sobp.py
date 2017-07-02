@@ -103,9 +103,9 @@ class SOBP(object):
         if len(tmp_idx) > 1:
             left_merge_idx = min(tmp_idx)
             right_merge_idx = max(tmp_idx)
-            gap_between = right_merge_idx - left_merge_idx - 10
-            left = val_arr[:left_merge_idx+5]
-            right = val_arr[right_merge_idx-5:]
+            gap_between = right_merge_idx - left_merge_idx
+            left = val_arr[:left_merge_idx]
+            right = val_arr[right_merge_idx:]
         else:
             # default split based on position of max in SOBP
             # to ensure getting 2 different points
