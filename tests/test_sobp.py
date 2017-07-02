@@ -31,7 +31,7 @@ class TestSOBPInit(unittest.TestCase):
         s = SOBP([self.a, self.b])
         assert isinstance(s, SOBP)
         assert len(s.component_peaks) == 2
-        assert str(s) == str([14., 18.])
+        assert repr(s) == "SOBP([14.0, 18.0])"
         self.assertAlmostEqual(s.component_peaks[0].position, 14.)
         self.assertAlmostEqual(s.component_peaks[1].position, 18.)
 
@@ -75,7 +75,7 @@ class TestSOBPInit(unittest.TestCase):
 
         assert isinstance(s, SOBP)
         assert len(s.component_peaks) == 3
-        assert str(s) == str([10, 12, 15.5])
+        assert repr(s) == "SOBP([10, 12, 15.5])"
 
         self.assertAlmostEqual(s.component_peaks[0].position, 10.)
         self.assertAlmostEqual(s.component_peaks[1].position, 12.)

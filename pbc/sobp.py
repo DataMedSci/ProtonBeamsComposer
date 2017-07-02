@@ -51,12 +51,24 @@ class SOBP(object):
             except TypeError:
                 self.def_domain = None
                 logger.warning("Given default domain params are invalid! No default domain specified.")
+        else:
+            self.def_domain = None
 
     def __repr__(self):
-        """Return a list of positions of SOPB peaks"""
-        return repr(self.positions())
+        return "SOBP({0})".format(self.positions())
+
+    def __str__(self):
+        return "SOBP Object consisting of peaks with positions:\n\t{0}\nDefault domain:\n\t{1}"\
+            .format(self.positions(), self.def_domain)
 
     def _has_defined_domain(self, dom):
+        """
+        Helper function for specifying domain used in calculations.
+
+        - return *dom* if not None else
+        - return default domain if specified else
+        - raise ValueError
+        """
         if dom is not None:
             return dom
         elif dom is None and self.def_domain is not None:
@@ -111,22 +123,25 @@ class SOBP(object):
             left = val_arr[:left_merge_idx]
             right = val_arr[right_merge_idx:]
         else:
+            # default split based on position of max in SOBP
+            # to ensure getting 2 different points
             merge_idx = val_arr.argmax()
             left = val_arr[:merge_idx]
             right = val_arr[merge_idx:]
+        # find idx of desired val in calculated partitions
         idx_left = (np.abs(left - val)).argmin()
         idx_right = (np.abs(right - val)).argmin()
         return idx_left, len(left) + gap_between + idx_right
 
     def spread(self, x_arr=None, val=0.9):
         x_arr = self._has_defined_domain(x_arr)
-        ll, rr = self.get_spread_idx(x_arr, val)
-        return x_arr[rr] - x_arr[ll]
+        left_idx, right_idx = self.get_spread_idx(x_arr, val)
+        return x_arr[right_idx] - x_arr[left_idx]
 
     def range(self, x_arr=None, val=0.9):
         x_arr = self._has_defined_domain(x_arr)
-        _, rr = self.get_spread_idx(x_arr, val)
-        return x_arr[rr]
+        _, right_idx = self.get_spread_idx(x_arr, val)
+        return x_arr[right_idx]
 
     def modulation(self, x_arr=None, val=0.9):
         """Distance from left to right for given threshold val"""
@@ -179,6 +194,7 @@ if __name__ == '__main__':
 
     start, stop, step = 12, 26, 0.1
     test_sobp = SOBP(inp_peaks, def_domain=[start, stop, step])
+    print(test_sobp)
     print(test_sobp.positions())
 
     test_domain = np.arange(start, stop, step)
