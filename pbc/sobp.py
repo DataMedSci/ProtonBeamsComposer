@@ -56,6 +56,37 @@ class SOBP(object):
             tmp_sobp.append(tmp_peak)
         return sum(tmp_sobp)
 
+    def get_spread_idx(self, x_arr, val):
+        """
+        This should find closest value to given
+        on the left and right side of SOBP.
+
+        :param x_arr - search domain
+        :param val - desired value
+        """
+        val_arr = self.overall_sum(x_arr)
+        if val > val_arr.max():
+            raise ValueError('Desired values cannot be greater than max in SOBP!')
+        merge_idx = val_arr.argmax()
+        left = val_arr[:merge_idx]
+        right = val_arr[merge_idx:]
+        idx_left = (np.abs(left - val)).argmin()
+        idx_right = (np.abs(right - val)).argmin()
+        return idx_left, merge_idx + idx_right
+
+    def spread(self, x_arr, val=0.9):
+        ll, rr = self.get_spread_idx(x_arr, val)
+        return x_arr[rr] - x_arr[ll]
+
+    def range(self, x_arr, val=0.9):
+        _, rr = self.get_spread_idx(x_arr, val)
+        return x_arr[rr]
+
+    def modulation(self, x_arr, val=0.9):
+        """Distance from left to right for given threshold val"""
+        ll, rr = self.get_spread_idx(x_arr, val)
+        return x_arr[rr] - x_arr[ll]
+
 
 if __name__ == '__main__':
     from os.path import join
@@ -97,8 +128,20 @@ if __name__ == '__main__':
     test_sobp = SOBP(inp_peaks)
 
     test_domain = np.arange(15, 25, 0.1)
-    plt.plot(test_domain, test_sobp.overall_sum(test_domain), label="sum")
+    sobp_vals = test_sobp.overall_sum(test_domain)
+    mx = sobp_vals.max()
+    t = 0.501
+    ll, rr = test_sobp.get_spread_idx(test_domain, t)
+    ll = test_domain[ll]
+    rr = test_domain[rr]
+    plt.plot([ll, ll], [0, mx])
+    plt.plot([rr, rr], [0, mx])
+    print(test_sobp.spread(test_domain, t))
+    print(test_sobp.range(test_domain, t))
+    plt.plot([15, 25], [t, t])
+    plt.plot(test_domain, sobp_vals, 'o-', label="sum")
     for p in inp_peaks:
         plt.plot(test_domain, p.evaluate(test_domain), label=p.position)
     plt.legend()
+    plt.title(t)
     plt.show()

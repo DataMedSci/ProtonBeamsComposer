@@ -100,10 +100,3 @@ class TestBraggPeakFunctions(unittest.TestCase):
         dom = np.arange(0, 10, 0.01)
         self.assertAlmostEqual(self.bp.fwhm(dom)[0], 5.35)
         self.assertAlmostEqual(self.bp.fwhm(dom)[1], 8.6)
-
-    def test_modulation(self):
-        dom = np.arange(0, 10, 0.01)
-        self.assertAlmostEqual(self.bp.modulation(dom), 1.12)
-        self.assertAlmostEqual(self.bp.modulation(dom, 0.9), 1.12)
-        self.assertAlmostEqual(self.bp.modulation(dom, 0.8), 1.62)
-        self.assertAlmostEqual(self.bp.modulation(dom, 0.5), 3.25)

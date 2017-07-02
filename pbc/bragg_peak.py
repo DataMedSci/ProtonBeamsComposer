@@ -77,22 +77,14 @@ class BraggPeak(object):
         idx_right = (np.abs(right - val)).argmin()
         return idx_left, merge_idx + idx_right
 
-    def spread_at_90(self, x_arr):
-        ll, rr = self.get_spread_idx(x_arr, 0.9)
-        return x_arr[ll], x_arr[rr]
-
-    def range(self, x_arr):
-        return self.spread_at_90(x_arr)[1]
+    def range(self, x_arr, val=0.9):
+        _, rr = self.get_spread_idx(x_arr, val)
+        return x_arr[rr]
 
     def fwhm(self, x_arr):
         """Full width af half-maximum"""
         ll, rr = self.get_spread_idx(x_arr, 0.5)
         return x_arr[ll], x_arr[rr]
-
-    def modulation(self, x_arr, val=0.9):
-        """Distance from left to right for given threshold val"""
-        ll, rr = self.get_spread_idx(x_arr, val)
-        return x_arr[rr] - x_arr[ll]
 
 
 if __name__ == '__main__':
@@ -112,5 +104,6 @@ if __name__ == '__main__':
 
     test_domain = np.arange(0, 30, .1)
     kle = a.evaluate(test_domain)
+    print(a.range(test_domain))
     plt.plot(test_domain, kle)
     plt.show()
