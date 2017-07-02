@@ -84,23 +84,39 @@ class SOBP(object):
     def get_spread_idx(self, x_arr=None, val=0.9):
         """
         This should find closest value to given
-        on the left and right side of SOBP.
+        on the far left and far right side of SOBP.
 
         :param x_arr - search domain
         :param val - desired value
         """
         x_arr = self._has_defined_domain(x_arr)
         val_arr = self.overall_sum(x_arr)
-        # we should assume val is from [0.0, 1.0] and
-        # we're actually looking for val*sobp.max()?
         if val > val_arr.max():
             raise ValueError('Desired values cannot be greater than max in SOBP, which is %s!' % val_arr.max())
-        merge_idx = val_arr.argmax()
-        left = val_arr[:merge_idx]
-        right = val_arr[merge_idx:]
+        tmp_idx = []
+        # iterate over known peak max positions and check if values are satisfying our val criteria
+        for peak in self.positions():
+            pos = (np.abs(x_arr - peak)).argmin()
+            if not val_arr[pos] < val:
+                tmp_idx.append(pos)
+        # the domain will probably be divided into left, middle, right
+        # middle is irrelevant but its length is required to calculate
+        # right index as "left domain len + gap len + right domain position"
+        gap_between = 0
+        if len(tmp_idx) > 1:
+            tmp_idx.sort()
+            left_merge_idx = min(tmp_idx)
+            right_merge_idx = max(tmp_idx)
+            gap_between = right_merge_idx - left_merge_idx
+            left = val_arr[:left_merge_idx]
+            right = val_arr[right_merge_idx:]
+        else:
+            merge_idx = val_arr.argmax()
+            left = val_arr[:merge_idx]
+            right = val_arr[merge_idx:]
         idx_left = (np.abs(left - val)).argmin()
         idx_right = (np.abs(right - val)).argmin()
-        return idx_left, merge_idx + idx_right
+        return idx_left, len(left) + gap_between + idx_right
 
     def spread(self, x_arr=None, val=0.9):
         x_arr = self._has_defined_domain(x_arr)
@@ -174,7 +190,7 @@ if __name__ == '__main__':
     print("Max val in sobp: {}".format(mx))
     print("Min val in sobp: {}".format(mn))
 
-    t = 0.6
+    t = 0.62
     ll, rr = test_sobp.get_spread_idx(val=t)
     ll = test_domain[ll]
     rr = test_domain[rr]
@@ -185,7 +201,7 @@ if __name__ == '__main__':
     print(test_sobp.spread(val=t))
     print(test_sobp.range(val=t))
 
-    plt.plot(test_domain, sobp_vals, 'o-', label="sum")
+    plt.plot(test_domain, sobp_vals, 'o', label="sum")
     for p in inp_peaks:
         plt.plot(test_domain, p.evaluate(test_domain), label=p.position)
     plt.legend()
