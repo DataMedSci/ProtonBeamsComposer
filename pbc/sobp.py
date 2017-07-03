@@ -2,7 +2,6 @@ import logging
 from copy import copy
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 from pbc.bragg_peak import BraggPeak
 
@@ -161,6 +160,7 @@ class SOBP(object):
         return [peak.position for peak in self.component_peaks]
 
     def spread(self, domain=None, val=0.9):
+        """Distance from left to right for given threshold val"""
         domain = self._has_defined_domain(domain)
         left_idx, right_idx = self._get_spread_idx(domain, val)
         return domain[right_idx] - domain[left_idx]
@@ -170,15 +170,10 @@ class SOBP(object):
         _, right_idx = self._get_spread_idx(domain, val)
         return domain[right_idx]
 
-    def modulation(self, domain=None, val=0.9):
-        """Distance from left to right for given threshold val"""
-        domain = self._has_defined_domain(domain)
-        left_idx, right_idx = self._get_spread_idx(domain, val)
-        return domain[right_idx] - domain[left_idx]
-
 
 if __name__ == '__main__':
     from os.path import join
+    import matplotlib.pyplot as plt
     import pandas as pd
 
     with open(join("..", "bp.csv"), 'r') as bp_file:
@@ -219,7 +214,7 @@ if __name__ == '__main__':
 
     inp_peaks = [b, c, d, e, a]
 
-    start, stop, step = 12, 26, 0.05
+    start, stop, step = 12, 26, 0.1
     test_sobp = SOBP(inp_peaks)
     print(test_sobp)
     print(test_sobp.positions())
@@ -248,7 +243,7 @@ if __name__ == '__main__':
     print("Spread: %s" % test_sobp.spread(val=t))
     print("Range: %s" % test_sobp.range(val=t))
 
-    plt.plot(test_domain, sobp_vals, '-', label="sum")
+    plt.plot(test_domain, sobp_vals, 'o-', label="sum")
     for p in inp_peaks:
         plt.plot(test_domain, p.evaluate(test_domain), label=p.position)
     plt.legend()

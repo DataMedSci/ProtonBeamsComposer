@@ -81,11 +81,6 @@ class BraggPeak(object):
         _, rr = self.get_spread_idx(x_arr, val)
         return x_arr[rr]
 
-    def fwhm(self, x_arr):
-        """Full width af half-maximum"""
-        ll, rr = self.get_spread_idx(x_arr, 0.5)
-        return x_arr[ll], x_arr[rr]
-
 
 if __name__ == '__main__':
     from os.path import join

@@ -95,8 +95,3 @@ class TestBraggPeakFunctions(unittest.TestCase):
     def test_range(self):
         dom = np.arange(5, 10, 0.01)
         self.assertAlmostEqual(self.bp.range(dom), 7.75)
-
-    def test_fwhm(self):
-        dom = np.arange(0, 10, 0.01)
-        self.assertAlmostEqual(self.bp.fwhm(dom)[0], 5.35)
-        self.assertAlmostEqual(self.bp.fwhm(dom)[1], 8.6)
