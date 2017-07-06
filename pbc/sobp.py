@@ -22,6 +22,10 @@ class SOBP(object):
                 param_list = [[10, 0.8], [12, 0.75], [15.5, 0.3]]
             The above will generate a SOBP with 3 peaks with positions and weights
             from param_list.
+
+        def_domain is optional and should be a list: [start, stop, step]
+            if such list is given - it is passed to numpy.arange(start, stop, step)
+            to create default domain used in functions when no other is specified
         """
         if isinstance(bragg_peaks, list) and len(bragg_peaks) > 0 and not param_list:
             try:
@@ -75,15 +79,23 @@ class SOBP(object):
         else:
             raise ValueError("No domain specified (argument/default)!")
 
-    def _get_spread_idx(self, domain=None, val=0.9):
+    def _section_bounds_idx(self, domain=None, val=0.9):
         """
         Helper function.
 
         Finds closest value to given on the far left and far right side of SOBP.
         Returns two indexes of found values.
 
+        In others words, it searches for the longest section satisfying both:
+            val_arr[start_idx] > :val: and val_arr[end_idx] > :val:
+        where val_arr = self.overall_sum(domain) and domain is specified by user
+        or the default domain is used (if specified).
+
+        This functions splits search domain in parts to ensure
+        two different points from left and right side of the peak.
+
         :param domain - search domain, if none given use default domain
-        :param val - threshold value
+        :param val - threshold value on both left and right side
         """
         domain = self._has_defined_domain(domain)
         val_arr = self.overall_sum(domain)
@@ -162,12 +174,12 @@ class SOBP(object):
     def spread(self, domain=None, val=0.9):
         """Distance from left to right for given threshold val"""
         domain = self._has_defined_domain(domain)
-        left_idx, right_idx = self._get_spread_idx(domain, val)
+        left_idx, right_idx = self._section_bounds_idx(domain, val)
         return domain[right_idx] - domain[left_idx]
 
     def range(self, domain=None, val=0.9):
         domain = self._has_defined_domain(domain)
-        _, right_idx = self._get_spread_idx(domain, val)
+        _, right_idx = self._section_bounds_idx(domain, val)
         return domain[right_idx]
 
 
@@ -229,7 +241,7 @@ if __name__ == '__main__':
     print("Min val in sobp: {}".format(mn))
 
     t = 0.75
-    ll, rr = test_sobp._get_spread_idx(val=t)
+    ll, rr = test_sobp._section_bounds_idx(val=t)
     print(ll, rr)
     print(test_domain[ll])
     print(test_domain[rr])

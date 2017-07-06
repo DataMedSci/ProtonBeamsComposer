@@ -10,6 +10,12 @@ logger = logging.getLogger(__name__)
 
 class BraggPeak(object):
     def __init__(self, bp_domain, bp_vals):
+        """
+        BraggPeak is a function created from bp_domain and bp_vals
+        using scipy.interpolate module. Whenever a function is called,
+        this calculated spline function along with domain specified by user
+        are used. bp_domain and bp_vals are lost after initialization.
+        """
         if len(bp_domain) != len(bp_vals):
             raise ValueError("Domain and values have different lengths!")
         self.spline = interpolate.InterpolatedUnivariateSpline(bp_domain, bp_vals, ext=3)
@@ -52,34 +58,19 @@ class BraggPeak(object):
         else:
             self._weight = new_weight
 
-    def evaluate(self, x_arr):
-        """Evaluate for given domain"""
-        return self._weight * self.spline(x_arr + self.initial_position - self.current_position)
+    def evaluate(self, domain):
+        """Calculate BP values for given domain"""
+        return self._weight * self.spline(domain + self.initial_position - self.current_position)
 
-    def get_spread_idx(self, x_arr, val):
-        """
-        For single peak this should find closest value to given
-        on the left and right side of BraggPeak.
-
-        This functions splits search domain in two parts to ensure
-        two different points from left and right side of the peak.
-
-        :param x_arr - search domain
-        :param val - desired value
-        """
-        val_arr = self.evaluate(x_arr)
+    def range(self, domain, val=0.9):
+        """Return range at given value on the dropping/further side of BP"""
+        val_arr = self.evaluate(domain)
         if val > val_arr.max():
             raise ValueError('Desired values cannot be greater than max in BraggPeak!')
         merge_idx = val_arr.argmax()
-        left = val_arr[:merge_idx]
         right = val_arr[merge_idx:]
-        idx_left = (np.abs(left - val)).argmin()
-        idx_right = (np.abs(right - val)).argmin()
-        return idx_left, merge_idx + idx_right
-
-    def range(self, x_arr, val=0.9):
-        _, rr = self.get_spread_idx(x_arr, val)
-        return x_arr[rr]
+        idx = (np.abs(right - val)).argmin() + merge_idx
+        return domain[idx]
 
 
 if __name__ == '__main__':
