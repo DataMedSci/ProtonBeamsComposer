@@ -2,6 +2,7 @@ import logging
 from copy import copy
 
 import numpy as np
+import scipy.optimize
 
 from pbc.bragg_peak import BraggPeak
 
@@ -148,7 +149,8 @@ class SOBP(object):
         if position:
             return position
         else:
-            raise ValueError("Nothing found...")
+            logger.warning("Nothing found for: %s, using fallback function from numpy." % val)
+            return (np.abs(array-val)).argmin()
 
     @property
     def def_domain(self):
@@ -191,6 +193,26 @@ class SOBP(object):
         left_idx, right_idx = self._section_bounds_idx(domain, left_threshold, right_threshold)
         return domain[right_idx] - domain[left_idx]
 
+    def _minimize_modulation_helper(self, data_to_unpack, target_modulation):
+        if len(data_to_unpack) != len(self.component_peaks):
+            raise ValueError("Length check failed...")
+        for idx, peak in enumerate(self.component_peaks):
+            peak.weight = data_to_unpack[idx]
+        return (self.modulation() - target_modulation)**2
+
+    def optimize_modulation(self, target_modulation):
+        initial_weights = []
+        bound_list = []
+        for peak in self.component_peaks:
+            initial_weights.append(peak.weight)
+            bound_list.append((.01, .99))
+        initial_weights = np.array(initial_weights)
+        res = scipy.optimize.minimize(self._minimize_modulation_helper, initial_weights, args=target_modulation,
+                                      bounds=bound_list, method='L-BFGS-B', options={
+                                            "disp": True, 'eps': 1e-02, 'ftol': 1e-20, 'gtol': 1e-20,  'maxls': 40
+                                        })
+        return res
+
 if __name__ == '__main__':
     from os.path import join
     import matplotlib.pyplot as plt
@@ -201,16 +223,6 @@ if __name__ == '__main__':
 
     x_peak = data[data.columns[0]].as_matrix()
     y_peak = data[data.columns[1]].as_matrix()
-
-    # load file with positions and weights
-    with open(join("..", "pos.txt"), "r") as pos_file:
-        pos_we_data = pd.read_csv(pos_file, sep=';')
-
-    positions = pos_we_data['position'].as_matrix()
-    weights = pos_we_data['weight'].as_matrix()
-
-    print("Positions: %s" % positions)
-    print("Weights: %s " % weights)
 
     a = BraggPeak(x_peak, y_peak)
     a.position = 24.
