@@ -46,7 +46,7 @@ if __name__ == '__main__':
         peak.position = positions[idx]
         peak.weight = weights[idx]
 
-    start, stop, step = 0, 25, 0.001
+    start, stop, step = 0, 25, 0.01
     test_sobp = SOBP(inp_peaks, def_domain=[start, stop, step])
     print(test_sobp)
     print(test_sobp.positions())
