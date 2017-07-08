@@ -79,7 +79,7 @@ class SOBP(object):
         else:
             raise ValueError("No domain specified (argument/default)!")
 
-    def _section_bounds_idx(self, domain=None, val=0.9):
+    def _section_bounds_idx(self, domain=None, threshold=0.9, threshold_right=None):
         """
         Helper function.
 
@@ -95,25 +95,31 @@ class SOBP(object):
         two different points from left and right side of the peak.
 
         :param domain - search domain, if none given use default domain
-        :param val - threshold value on both left and right side
+        :param threshold - threshold value on the left side
+        :param threshold_right - additional parameter for threshold value on the right side
         """
         domain = self._has_defined_domain(domain)
         val_arr = self.overall_sum(domain)
-        if val > val_arr.max():
+        if not threshold_right:
+            threshold_right = threshold
+        if threshold > val_arr.max() or threshold_right > val_arr.max():
             raise ValueError('Desired values cannot be greater than max in SOBP, which is %s!' % val_arr.max())
-        tmp_idx = []
+        tmp_idx_left = []
+        tmp_idx_right = []
         # iterate over known peak max positions and check if values are satisfying our val criteria
         for peak in self.positions():
             pos = (np.abs(domain - peak)).argmin()
-            if val_arr[pos] > val:
-                tmp_idx.append(pos)
+            if val_arr[pos] >= threshold:
+                tmp_idx_left.append(pos)
+            if val_arr[pos] >= threshold_right:
+                tmp_idx_right.append(pos)
         # the domain will probably be divided into left, middle, right
         # middle is irrelevant but its length is required to calculate
         # right index as "left domain len + gap len + right domain position"
         gap_between = 0
-        if len(tmp_idx) > 1:
-            left_merge_idx = min(tmp_idx)
-            right_merge_idx = max(tmp_idx)
+        if len(tmp_idx_left) > 1 and len(tmp_idx_right) > 1:
+            left_merge_idx = min(tmp_idx_left)
+            right_merge_idx = max(tmp_idx_right)
             gap_between = right_merge_idx - left_merge_idx
             left = val_arr[:left_merge_idx]
             right = val_arr[right_merge_idx:]
@@ -124,8 +130,8 @@ class SOBP(object):
             left = val_arr[:merge_idx]
             right = val_arr[merge_idx:]
         # find idx of desired val in calculated partitions
-        idx_left = self._argmin(left, val)
-        idx_right = self._argmin(right, val)
+        idx_left = self._argmin(left, threshold)
+        idx_right = self._argmin(right, threshold_right)
         return idx_left, len(left) + gap_between + idx_right
 
     @staticmethod
@@ -171,17 +177,19 @@ class SOBP(object):
         """Return list of positions of BraggPeaks contained in SOBP"""
         return [peak.position for peak in self.component_peaks]
 
-    def spread(self, domain=None, val=0.9):
-        """Distance from left to right for given threshold val"""
-        domain = self._has_defined_domain(domain)
-        left_idx, right_idx = self._section_bounds_idx(domain, val)
-        return domain[right_idx] - domain[left_idx]
+    def fwhm(self, domain=None):
+        """Full width at half maximum"""
+        return self.modulation(domain, left_threshold=0.5)
 
-    def range(self, domain=None, val=0.9):
+    def range(self, val=0.9, domain=None):
         domain = self._has_defined_domain(domain)
         _, right_idx = self._section_bounds_idx(domain, val)
         return domain[right_idx]
 
+    def modulation(self, domain=None, left_threshold=0.9, right_threshold=None):
+        domain = self._has_defined_domain(domain)
+        left_idx, right_idx = self._section_bounds_idx(domain, left_threshold, right_threshold)
+        return domain[right_idx] - domain[left_idx]
 
 if __name__ == '__main__':
     from os.path import join
@@ -226,7 +234,7 @@ if __name__ == '__main__':
 
     inp_peaks = [b, c, d, e, a]
 
-    start, stop, step = 12, 26, 0.1
+    start, stop, step = 0, 26, 0.1
     test_sobp = SOBP(inp_peaks)
     print(test_sobp)
     print(test_sobp.positions())
@@ -241,23 +249,30 @@ if __name__ == '__main__':
     print("Min val in sobp: {}".format(mn))
 
     t = 0.75
-    ll, rr = test_sobp._section_bounds_idx(val=t)
+    t2 = 0.6
+    ll, rr = test_sobp._section_bounds_idx(threshold=t, threshold_right=t2)
     print(ll, rr)
     print(test_domain[ll])
     print(test_domain[rr])
     print(sobp_vals[ll], sobp_vals[rr])
     ll = test_domain[ll]
     rr = test_domain[rr]
-    plt.plot([ll, ll], [0, mx])
-    plt.plot([rr, rr], [0, mx])
-    plt.plot([start, stop], [t, t])
+    plt.plot([ll, ll], [0, mx], color='yellow')
+    plt.plot([rr, rr], [0, mx], color='orange')
+    plt.plot([start, stop], [t, t], color='yellow', label=str(t) + '; left (val=%s)' % ll)
+    plt.plot([start, stop], [t2, t2], color='orange', label=str(t2) + '; right (val=%s)' % rr)
 
-    print("Spread: %s" % test_sobp.spread(val=t))
-    print("Range: %s" % test_sobp.range(val=t))
+    tmp_fwhm = test_sobp.fwhm()
+    tmp_range = test_sobp.range(val=t)
+    tmp_modulation = test_sobp.modulation(left_threshold=t, right_threshold=t2)
+    print("FWHM: %s [mm]" % tmp_fwhm)
+    print("Range: %s [mm]" % tmp_range)
+    print("Modulation: %s [mm]" % tmp_modulation)
 
-    plt.plot(test_domain, sobp_vals, 'o-', label="sum")
+    plt.plot(test_domain, sobp_vals, 'o-', label="sum", color="red")
     for p in inp_peaks:
         plt.plot(test_domain, p.evaluate(test_domain), label=p.position)
     plt.legend()
-    plt.title("Spread: {0:.3f} Range: {1:.3f}".format(test_sobp.spread(val=t), test_sobp.range(val=t)))
+    plt.title("FWHM: {0:.2f}, range: {1:.2f}, modulation: {2:.2f} (l_threshold:{3:.2f},r_threshold:{4:.2f})"
+              .format(tmp_fwhm, tmp_range, tmp_modulation, t, t2))
     plt.show()
