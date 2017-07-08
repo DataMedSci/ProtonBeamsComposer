@@ -193,7 +193,7 @@ class SOBP(object):
         left_idx, right_idx = self._section_bounds_idx(domain, left_threshold, right_threshold)
         return domain[right_idx] - domain[left_idx]
 
-    def _minimize_modulation_helper(self, data_to_unpack, target_modulation):
+    def _optimization_helper(self, data_to_unpack, target_modulation):
         if len(data_to_unpack) != len(self.component_peaks):
             raise ValueError("Length check failed...")
         for idx, peak in enumerate(self.component_peaks):
@@ -207,7 +207,7 @@ class SOBP(object):
             initial_weights.append(peak.weight)
             bound_list.append((.01, .99))
         initial_weights = np.array(initial_weights)
-        res = scipy.optimize.minimize(self._minimize_modulation_helper, initial_weights, args=target_modulation,
+        res = scipy.optimize.minimize(self._optimization_helper, initial_weights, args=target_modulation,
                                       bounds=bound_list, method='L-BFGS-B', options={
                                             "disp": True, 'eps': 1e-02, 'ftol': 1e-20, 'gtol': 1e-20,  'maxls': 40
                                         })

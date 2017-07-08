@@ -23,35 +23,28 @@ if __name__ == '__main__':
     print("Positions: %s" % positions)
     print("Weights: %s " % weights)
 
-    a = BraggPeak(x_peak, y_peak)
-    a.position = 14.5
-    a.weight = .8
+    p1 = BraggPeak(x_peak, y_peak)
+    p2 = BraggPeak(x_peak, y_peak)
+    p3 = BraggPeak(x_peak, y_peak)
+    p4 = BraggPeak(x_peak, y_peak)
+    p5 = BraggPeak(x_peak, y_peak)
+    p6 = BraggPeak(x_peak, y_peak)
+    p7 = BraggPeak(x_peak, y_peak)
+    p8 = BraggPeak(x_peak, y_peak)
+    p9 = BraggPeak(x_peak, y_peak)
+    p10 = BraggPeak(x_peak, y_peak)
+    p11 = BraggPeak(x_peak, y_peak)
+    p12 = BraggPeak(x_peak, y_peak)
+    p13 = BraggPeak(x_peak, y_peak)
+    p14 = BraggPeak(x_peak, y_peak)
+    p15 = BraggPeak(x_peak, y_peak)
 
-    b = BraggPeak(x_peak, y_peak)
-    b.position = 13.
-    b.weight = .3
+    inp_peaks = [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15]
 
-    c = BraggPeak(x_peak, y_peak)
-    c.position = 11.5
-    c.weight = .3
-
-    d = BraggPeak(x_peak, y_peak)
-    d.position = 9.
-    d.weight = .3
-
-    e = BraggPeak(x_peak, y_peak)
-    e.position = 6.5
-    e.weight = .3
-
-    f = BraggPeak(x_peak, y_peak)
-    f.position = 4.
-    f.weight = .25
-
-    g = BraggPeak(x_peak, y_peak)
-    g.position = 1.
-    g.weight = .2
-
-    inp_peaks = [b, c, d, e, a, f, g]
+    lng = len(inp_peaks)
+    for idx, peak in enumerate(inp_peaks):
+        peak.position = positions[idx]
+        peak.weight = weights[idx]
 
     start, stop, step = 0, 25, 0.001
     test_sobp = SOBP(inp_peaks, def_domain=[start, stop, step])
@@ -59,15 +52,17 @@ if __name__ == '__main__':
     print(test_sobp.positions())
 
     test_domain = np.arange(start, stop, step)
-    # sobp_vals = test_sobp.overall_sum()
-    # plt.plot(test_domain, sobp_vals, label="sum", color="red")
-    # plt.show()
+    sobp_vals = test_sobp.overall_sum()
+    plt.plot(test_domain, sobp_vals, label="sum", color="red")
+    plt.show()
 
-    res = test_sobp.optimize_modulation(target_modulation=10.0)
+    target = 15.0
+    import time
+    time_st = time.time()
+    res = test_sobp.optimize_modulation(target_modulation=target)
     print("---------------------------------------------------")
+    print("Time: %.2f (s)" % (time.time() - time_st))
     print(res)
-    print(res['x'])
-    # re = [0.29422737, 0.29419299, 0.30788737, 0.30591321, 0.79163851, 0.25610167, 0.196808]
     re = res['x']
     for idx, peak in enumerate(test_sobp.component_peaks):
         peak.weight = re[idx]
@@ -77,5 +72,5 @@ if __name__ == '__main__':
     print(mod, ran)
     plt.plot([start, stop], [0.9, 0.9], color='yellow')
     plt.plot(test_domain, sobp_vals, label="sum", color="red")
-    plt.title("Modulation: {0}, Range: {1}".format(mod, ran))
+    plt.title("Modulation: {0:.3f}, Range: {1:.3f}, Diff: {2:.2f}".format(mod, ran, abs(mod-target)))
     plt.show()
