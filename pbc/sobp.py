@@ -149,8 +149,8 @@ class SOBP(object):
         if position:
             return position
         else:
-            logger.warning("Nothing found for: %s, using fallback function from numpy." % val)
-            return (np.abs(array-val)).argmin()
+            logger.debug("Nothing found for: %s, zero idx returned." % val)
+            return 0
 
     @property
     def def_domain(self):
