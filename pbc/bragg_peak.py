@@ -1,36 +1,95 @@
 import logging
 
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import interpolate
+
+logging.basicConfig(level=0)
 logger = logging.getLogger(__name__)
 
 
-class BraggPeak:
-    def __init__(self, bragg_peak, primary_position, shifted_position, height):
-        # todo: merge those?
-        self.peak = bragg_peak
-        self.primary_pos = primary_position
-        self.shifted_pos = shifted_position
-        self.height = height
-        self.bp_data = {"bp": self.peak,
-                        "properties":
-                            {"primary_position": self.primary_pos,
-                             "shifted_position": self.shifted_pos,
-                             "height": self.height
-                             }
-                        }
-        logger.debug("Creating BraggPeak - primary position %.2f, shifted position %.2f height %.2f\nfrom\n%s" % (
-            primary_position, shifted_position, height, bragg_peak))
+class BraggPeak(object):
+    def __init__(self, bp_domain, bp_vals):
+        """
+        BraggPeak is a function created from bp_domain and bp_vals
+        using scipy.interpolate module. Whenever a function is called,
+        this calculated spline function along with domain specified by user
+        are used. bp_domain and bp_vals are lost after initialization.
+        """
+        if len(bp_domain) != len(bp_vals):
+            raise ValueError("Domain and values have different lengths!")
+        self.spline = interpolate.InterpolatedUnivariateSpline(bp_domain, bp_vals, ext=3)
+        self.initial_position = bp_domain[np.array(bp_vals).argmax()]
+        self.current_position = self.initial_position
+        self._weight = 1.0
+        logger.debug("Creating BraggPeak...\nPrimary max position: %f\n"
+                     "Calculated spline:\n%s"
+                     % (self.initial_position, self.spline))
 
     # todo: add more class methods like __len__, __setitem__
     # https://docs.python.org/3/reference/datamodel.html
-    def __repr__(self):
-        return repr(self.bp_data)
+    def __str__(self):
+        return str("{0} with position: {1} and weight: {2}".format(
+                   self.__class__.__name__, self.position, self.weight))
 
-    def __getitem__(self, item):
-        return self.bp_data[item]
+    def __repr__(self):
+        return repr(self.spline)
+
+    def __getitem__(self, point):
+        """Returns value for given x axis point"""
+        return self.spline(point)
+
+    @property
+    def position(self):
+        return self.current_position
+
+    @position.setter
+    def position(self, new_position):
+        self.current_position = new_position
+
+    @property
+    def weight(self):
+        return self._weight
+
+    @weight.setter
+    def weight(self, new_weight):
+        if new_weight < 0.0 or new_weight > 1.0:
+            raise ValueError("Weight should be from 0.0 to 1.0")
+        else:
+            self._weight = new_weight
+
+    def evaluate(self, domain):
+        """Calculate BP values for given domain"""
+        return self._weight * self.spline(domain + self.initial_position - self.current_position)
+
+    def range(self, domain, val=0.9):
+        """Return range at given value on the dropping/further side of BP"""
+        val_arr = self.evaluate(domain)
+        if val > val_arr.max():
+            raise ValueError('Desired values cannot be greater than max in BraggPeak!')
+        merge_idx = val_arr.argmax()
+        right = val_arr[merge_idx:]
+        idx = (np.abs(right - val)).argmin() + merge_idx
+        return domain[idx]
 
 
 if __name__ == '__main__':
-    # small testing area
-    kle = BraggPeak([], 10, 20, 30)
-    print(kle)
-    print(kle['properties']['height'])
+    from os.path import join
+    import pandas as pd
+
+    with open(join("..", "bp.csv"), 'r') as bp_file:
+        data = pd.read_csv(bp_file, sep=';')
+
+    x_peak = data[data.columns[0]].as_matrix()
+    y_peak = data[data.columns[1]].as_matrix()
+
+    a = BraggPeak(x_peak, y_peak)
+
+    a.weight = .95
+    a.position = 12.5
+
+    test_domain = np.arange(0, 30, .1)
+    kle = a.evaluate(test_domain)
+    print(a.range(test_domain))
+    plt.plot(test_domain, kle)
+    plt.show()
