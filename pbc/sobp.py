@@ -149,7 +149,7 @@ class SOBP(object):
         if position:
             return position
         else:
-            logger.debug("Nothing found for: %s, zero idx returned." % val)
+            # logger.debug("Nothing found for: %s, zero idx returned." % val)
             return 0
 
     @property
@@ -209,7 +209,7 @@ class SOBP(object):
         initial_weights = np.array(initial_weights)
         res = scipy.optimize.minimize(self._optimization_helper, initial_weights, args=target_modulation,
                                       bounds=bound_list, method='L-BFGS-B', options={
-                                            "disp": True, 'eps': 1e-02, 'ftol': 1e-20, 'gtol': 1e-20,  'maxls': 40
+                                            "disp": True, 'eps': 1e-04, 'ftol': 1e-20, 'gtol': 1e-20,  'maxls': 40
                                         })
         return res
 

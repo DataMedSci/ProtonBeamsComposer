@@ -1,52 +1,27 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+from copy import copy
 
 from pbc.bragg_peak import BraggPeak
 from pbc.sobp import SOBP
 
 
-if __name__ == '__main__':
-    with open("bp.csv", 'r') as bp_file:
-        data = pd.read_csv(bp_file, sep=';')
+def calculate_number_of_peaks_gottshalk_80_rule(peak, domain, spread):
+    """
+    Calculate number of peaks optimal for SOBP optimization
+    using Gotshalck 80% rule.
+    """
+    temp_peak = copy(peak)
+    temp_peak.weight = 1.0
+    width = temp_peak.width_at(domain=domain, val=0.8)
+    print(width)
+    n_of_optimal_peaks = int(np.ceil(spread / width))
+    return n_of_optimal_peaks + 1
 
-    x_peak = data[data.columns[0]].as_matrix()
-    y_peak = data[data.columns[1]].as_matrix()
 
-    # load file with positions and weights
-    with open("pos.txt", "r") as pos_file:
-        pos_we_data = pd.read_csv(pos_file, sep=';')
-
-    positions = pos_we_data['position'].as_matrix()
-    weights = pos_we_data['weight'].as_matrix()
-
-    print("Positions: %s" % positions)
-    print("Weights: %s " % weights)
-
-    p1 = BraggPeak(x_peak, y_peak)
-    p2 = BraggPeak(x_peak, y_peak)
-    p3 = BraggPeak(x_peak, y_peak)
-    p4 = BraggPeak(x_peak, y_peak)
-    p5 = BraggPeak(x_peak, y_peak)
-    p6 = BraggPeak(x_peak, y_peak)
-    p7 = BraggPeak(x_peak, y_peak)
-    p8 = BraggPeak(x_peak, y_peak)
-    p9 = BraggPeak(x_peak, y_peak)
-    p10 = BraggPeak(x_peak, y_peak)
-    p11 = BraggPeak(x_peak, y_peak)
-    p12 = BraggPeak(x_peak, y_peak)
-    p13 = BraggPeak(x_peak, y_peak)
-    p14 = BraggPeak(x_peak, y_peak)
-    p15 = BraggPeak(x_peak, y_peak)
-
-    inp_peaks = [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15]
-
-    lng = len(inp_peaks)
-    for idx, peak in enumerate(inp_peaks):
-        peak.position = positions[idx]
-        peak.weight = weights[idx]
-
-    start, stop, step = 0, 25, 0.01
+def test_optimize():
+    start, stop, step = 0, 20, 0.001
     test_sobp = SOBP(inp_peaks, def_domain=[start, stop, step])
     print(test_sobp)
     print(test_sobp.positions())
@@ -74,3 +49,35 @@ if __name__ == '__main__':
     plt.plot(test_domain, sobp_vals, label="sum", color="red")
     plt.title("Modulation: {0:.3f}, Range: {1:.3f}, Diff: {2:.2f}".format(mod, ran, abs(mod-target)))
     plt.show()
+
+if __name__ == '__main__':
+    with open("bp.csv", 'r') as bp_file:
+        data = pd.read_csv(bp_file, sep=';')
+
+    x_peak = data[data.columns[0]].as_matrix()
+    y_peak = data[data.columns[1]].as_matrix()
+
+    # load file with positions and weights
+    with open("pos.txt", "r") as pos_file:
+        pos_we_data = pd.read_csv(pos_file, sep=';')
+
+    positions = pos_we_data['position'].as_matrix()
+    weights = pos_we_data['weight'].as_matrix()
+
+    print("Positions: %s" % positions)
+    print("Weights: %s " % weights)
+
+    testing_peak = BraggPeak(x_peak, y_peak)
+    testing_domain = np.arange(0, 30, 0.001)
+
+    number_of_peaks = calculate_number_of_peaks_gottshalk_80_rule(peak=testing_peak, domain=testing_domain, spread=15)
+    print(number_of_peaks)
+
+    inp_peaks = [BraggPeak(x_peak, y_peak) for i in range(17)]
+
+    lng = len(inp_peaks)
+    for idx, peak in enumerate(inp_peaks):
+        peak.position = positions[idx]
+        peak.weight = weights[idx]
+
+    test_optimize()

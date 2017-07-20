@@ -62,15 +62,36 @@ class BraggPeak(object):
         """Calculate BP values for given domain"""
         return self._weight * self.spline(domain + self.initial_position - self.current_position)
 
-    def range(self, domain, val=0.9):
-        """Return range at given value on the dropping/further side of BP"""
-        val_arr = self.evaluate(domain)
+    def _calculate_idx_for_given_height_value(self, domain, val=0.8):
+        """
+        This is a helper function and it returns indices based on given domain.
+
+        For single peak this should find closest value to given
+        on the left and right side of BraggPeak.
+        This functions splits search domain in two parts to ensure
+        two different points from left and right side of the peak.
+
+        :param domain - search domain
+        :param val - percentage value where the width is calculated at
+        """
+        val_arr = self.evaluate(domain=domain)
         if val > val_arr.max():
             raise ValueError('Desired values cannot be greater than max in BraggPeak!')
         merge_idx = val_arr.argmax()
+        left = val_arr[:merge_idx]
         right = val_arr[merge_idx:]
-        idx = (np.abs(right - val)).argmin() + merge_idx
+        idx_left = (np.abs(left - val)).argmin()
+        idx_right = (np.abs(right - val)).argmin()
+        return idx_left, merge_idx + idx_right
+
+    def range(self, domain, val=0.9):
+        """Return range at given value on the dropping/further side of BP"""
+        _, idx = self._calculate_idx_for_given_height_value(domain=domain, val=val)
         return domain[idx]
+
+    def width_at(self, domain, val=0.8):
+        left_idx, right_idx = self._calculate_idx_for_given_height_value(domain=domain, val=val)
+        return domain[right_idx] - domain[left_idx]
 
 
 if __name__ == '__main__':
