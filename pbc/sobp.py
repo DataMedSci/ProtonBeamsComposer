@@ -95,9 +95,9 @@ class SOBP(object):
         This functions splits search domain in parts to ensure
         two different points from left and right side of the peak.
 
-        :param domain - search domain, if none given use default domain
-        :param threshold - threshold value on the left side
-        :param threshold_right - additional parameter for threshold value on the right side
+        :param domain: search domain, if none given use default domain
+        :param threshold: threshold value on the left side
+        :param threshold_right: additional parameter for threshold value on the right side
         """
         domain = self._has_defined_domain(domain)
         val_arr = self.overall_sum(domain)
@@ -138,7 +138,9 @@ class SOBP(object):
     @staticmethod
     def _argmin(array, val):
         """
-        Find index of closest element in array preserving condition: array[idx] >= val
+        Helper function find index of closest element in array
+        preserving condition:
+            array[idx] >= val
         """
         dist = 99999
         position = None
@@ -149,7 +151,7 @@ class SOBP(object):
         if position:
             return position
         else:
-            # logger.debug("Nothing found for: %s, zero idx returned." % val)
+            # Nothing found, return zero idx as numpy does in such situations
             return 0
 
     @property
@@ -184,6 +186,7 @@ class SOBP(object):
         return self.modulation(domain, left_threshold=0.5)
 
     def range(self, val=0.9, domain=None):
+        """Return range of SOBP using given domain at the furthest end"""
         domain = self._has_defined_domain(domain)
         _, right_idx = self._section_bounds_idx(domain, val)
         return domain[right_idx]
@@ -193,23 +196,55 @@ class SOBP(object):
         left_idx, right_idx = self._section_bounds_idx(domain, left_threshold, right_threshold)
         return domain[right_idx] - domain[left_idx]
 
-    def _optimization_helper(self, data_to_unpack, target_modulation):
+    def _flat_plateau_factor_helper(self, spread, end, factor=0.9):
+        plateau_domain = np.arange(end - spread, end, 0.1)
+        plateau = self.overall_sum(plateau_domain)
+        # iterate over plateau points and calculate diff from target (for now 0.9)
+        return sum([abs(pp - factor) for pp in plateau])
+
+    def _optimization_helper(self, data_to_unpack, target_modulation, target_range):
+        """
+        Helper function for scipy.optimize - should calculate modulation
+        and plateau factor (how flat is SOBP plateau between two points:
+            - target_range
+            - target_range - target_modulation
+
+        :param data_to_unpack: data from scipy.optimize
+        :param target_modulation:
+        :param target_range: if not given, use the furthest peak position in SOBP
+        :return:
+        """
         if len(data_to_unpack) != len(self.component_peaks):
-            raise ValueError("Length check failed...")
+            raise ValueError("Length check failed for data to unpack...")
         for idx, peak in enumerate(self.component_peaks):
             peak.weight = data_to_unpack[idx]
-        return (self.modulation() - target_modulation)**2
+        spread_factor = (self.modulation() - target_modulation)**2
+        plateau_factor = self._flat_plateau_factor_helper(spread=target_modulation, end=target_range)
+        return spread_factor + plateau_factor**3
 
-    def optimize_modulation(self, target_modulation):
+    def optimize_modulation(self, target_modulation, target_range=None):
+        """
+        Optimise weights of peaks in SOBP object. This function does not
+        move peaks from original position, it only manipulates their weights.
+
+        :param target_modulation:
+        :param target_range:
+        :return:
+        """
         initial_weights = []
         bound_list = []
+        furthest_range = 0.0
         for peak in self.component_peaks:
             initial_weights.append(peak.weight)
             bound_list.append((.01, .99))
+            if peak.position > furthest_range:
+                furthest_range = peak.position
+        if target_range is None:
+            target_range = furthest_range
         initial_weights = np.array(initial_weights)
-        res = scipy.optimize.minimize(self._optimization_helper, initial_weights, args=target_modulation,
+        res = scipy.optimize.minimize(self._optimization_helper, initial_weights, args=(target_modulation, target_range),
                                       bounds=bound_list, method='L-BFGS-B', options={
-                                            "disp": True, 'eps': 1e-04, 'ftol': 1e-20, 'gtol': 1e-20,  'maxls': 40
+                                            "disp": True, 'eps': 1e-02, 'ftol': 1e-20, 'gtol': 1e-20,  'maxls': 40
                                         })
         return res
 
