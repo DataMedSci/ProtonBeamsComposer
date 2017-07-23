@@ -166,7 +166,6 @@ class SOBP(object):
         """
         Calculate sum of peaks included in SOBP using given or default domain.
         If none of the above is specified - raise ValueError.
-        Also, divide calculated sum by its max value and return as result.
         """
         domain = self._has_defined_domain(domain)
         tmp_sobp = []
@@ -174,7 +173,8 @@ class SOBP(object):
             tmp_peak = peak.evaluate(domain)
             tmp_sobp.append(tmp_peak)
         tmp_sum = sum(tmp_sobp)
-        tmp_sum /= tmp_sum.max()
+        # todo: rethink this one
+        # tmp_sum /= tmp_sum.max()
         return tmp_sum
 
     def positions(self):
@@ -196,10 +196,10 @@ class SOBP(object):
         left_idx, right_idx = self._section_bounds_idx(domain, left_threshold, right_threshold)
         return domain[right_idx] - domain[left_idx]
 
-    def _flat_plateau_factor_helper(self, spread, end, factor=0.9):
+    def _flat_plateau_factor_helper(self, spread, end, factor=1.0):
         plateau_domain = np.arange(end - spread, end, 0.1)
         plateau = self.overall_sum(plateau_domain)
-        # iterate over plateau points and calculate diff from target (for now 0.9)
+        # iterate over plateau points and calculate diff from target
         return sum([abs(pp - factor) for pp in plateau])
 
     def _optimization_helper(self, data_to_unpack, target_modulation, target_range):
@@ -244,7 +244,7 @@ class SOBP(object):
         initial_weights = np.array(initial_weights)
         res = scipy.optimize.minimize(self._optimization_helper, initial_weights, args=(target_modulation, target_range),
                                       bounds=bound_list, method='L-BFGS-B', options={
-                                            "disp": True, 'eps': 1e-02, 'ftol': 1e-20, 'gtol': 1e-20,  'maxls': 40
+                                            "disp": True, 'eps': 1e-06, 'ftol': 1e-20, 'gtol': 1e-20,  'maxls': 40
                                         })
         return res
 

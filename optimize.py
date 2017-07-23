@@ -21,7 +21,7 @@ def calculate_number_of_peaks_gottshalk_80_rule(peak, domain, spread):
 
 
 def test_optimize():
-    start, stop, step = 0, 20, 0.01
+    start, stop, step = 0, 17.5, 0.01
     test_sobp = SOBP(inp_peaks, def_domain=[start, stop, step])
     print(test_sobp)
     print(test_sobp.positions())
@@ -34,7 +34,7 @@ def test_optimize():
     target = 15.0
     import time
     time_st = time.time()
-    res = test_sobp.optimize_modulation(target_modulation=target)
+    res = test_sobp.optimize_modulation(target_modulation=15, target_range=15)
     print("---------------------------------------------------")
     print("Time: %.2f (s)" % (time.time() - time_st))
     print(res)
@@ -46,13 +46,27 @@ def test_optimize():
     ran = test_sobp.range()
     plateau_domain = np.arange(0, target, 0.1)
     plateau = test_sobp.overall_sum(plateau_domain)
-    plateau_factor = sum([abs(pp - 0.9) for pp in plateau])
+    plateau_factor = sum([abs(pp - 1.0) for pp in plateau])
 
     print(mod, ran)
-    plt.plot([start, stop], [0.9, 0.9], color='yellow')
+    plt.plot([start, stop], [1, 1], color='yellow')
     plt.plot(test_domain, sobp_vals, label="sum", color="red")
     plt.title("Modulation: {0:.3f}, Range: {1:.3f}, Md-diff: {2:.2f}, Plateau-diff: {3:.3f}"
               .format(mod, ran, abs(mod-target), plateau_factor))
+    plt.show()
+
+    # plot plateau only
+    plt.plot([start, stop], [0.98, 0.98], color='orange')
+    plt.plot([start, stop], [0.99, 0.99], color='green')
+    plt.plot([start, stop], [1, 1], color='blue')
+    plt.plot([start, stop], [1.02, 1.02], color='orange')
+    plt.plot([start, stop], [1.01, 1.01], color='green')
+    plt.plot(test_domain, sobp_vals, label="sum", color="red")
+    plt.title("Modulation: {0:.3f}, Range: {1:.3f}, Md-diff: {2:.2f}, Plateau-diff: {3:.3f}"
+              .format(mod, ran, abs(mod - target), plateau_factor))
+    axes = plt.gca()
+    axes.set_xlim([0, 15])
+    axes.set_ylim([0.95, 1.05])
     plt.show()
 
 if __name__ == '__main__':
@@ -82,7 +96,6 @@ if __name__ == '__main__':
     # todo: make this auto-adjustable, not file-hardcoded like now
     inp_peaks = [BraggPeak(x_peak, y_peak) for i in range(17)]
 
-    lng = len(inp_peaks)
     for idx, peak in enumerate(inp_peaks):
         peak.position = positions[idx]
         peak.weight = weights[idx]
