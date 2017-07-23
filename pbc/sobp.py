@@ -5,6 +5,8 @@ import numpy as np
 import scipy.optimize
 
 from pbc.bragg_peak import BraggPeak
+from pbc.helpers import argmin_with_condition
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -132,28 +134,9 @@ class SOBP(object):
             left = val_arr[:merge_idx]
             right = val_arr[merge_idx:]
         # find idx of desired val in calculated partitions
-        idx_left = self._argmin(left, threshold)
-        idx_right = self._argmin(right, threshold_right)
+        idx_left = argmin_with_condition(left, threshold)
+        idx_right = argmin_with_condition(right, threshold_right)
         return idx_left, len(left) + gap_between + idx_right
-
-    @staticmethod
-    def _argmin(array, val):
-        """
-        Helper function find index of closest element in array
-        preserving condition:
-            array[idx] >= val
-        """
-        dist = 99999
-        position = None
-        for i, elem in enumerate(array):
-            if np.abs(elem - val) < dist and elem >= val:
-                dist = np.abs(elem - val)
-                position = i
-        if position:
-            return position
-        else:
-            # Nothing found, return zero idx as numpy does in such situations
-            return 0
 
     @property
     def def_domain(self):
@@ -193,15 +176,17 @@ class SOBP(object):
         return domain[right_idx]
 
     def modulation(self, domain=None, left_threshold=0.9, right_threshold=0.9):
+        """Calculate modulation using given thresholds"""
         domain = self._has_defined_domain(domain)
         left_idx, right_idx = self._section_bounds_idx(domain, left_threshold, right_threshold)
         return domain[right_idx] - domain[left_idx]
 
-    def _flat_plateau_factor_helper(self, spread, end, factor=1.0):
+    def _flat_plateau_factor_helper(self, spread, end, target_val=1.0):
+        """Helper function for optimization - calculate how flat is SOBP plateau"""
         plateau_domain = np.arange(end - spread, end, 0.1)
         plateau = self.overall_sum(plateau_domain)
         # iterate over plateau points and calculate diff from target
-        return sum([abs(pp - factor) for pp in plateau])
+        return sum([abs(pp - target_val) for pp in plateau])
 
     def _optimization_helper(self, data_to_unpack, target_modulation, target_range):
         """
@@ -243,10 +228,14 @@ class SOBP(object):
         if target_range is None:
             target_range = furthest_range
         initial_weights = np.array(initial_weights)
-        res = scipy.optimize.minimize(self._optimization_helper, initial_weights, args=(target_modulation, target_range),
-                                      bounds=bound_list, method='L-BFGS-B', options={
-                                            'disp': True, 'eps': 1e-06, 'ftol': 1e-20, 'gtol': 1e-20,  'maxls': 40
-                                        })
+        res = scipy.optimize.minimize(self._optimization_helper,
+                                      x0=initial_weights,
+                                      args=(target_modulation, target_range),
+                                      bounds=bound_list,
+                                      method='L-BFGS-B',
+                                      options={
+                                          'disp': True, 'eps': 1e-06, 'ftol': 1e-20, 'gtol': 1e-20,  'maxls': 40
+                                      })
         return res
 
 if __name__ == '__main__':

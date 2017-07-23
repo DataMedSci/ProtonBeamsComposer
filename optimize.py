@@ -1,39 +1,27 @@
 import time
-from copy import copy
 from os.path import join
 
-import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
 from pbc.bragg_peak import BraggPeak
+from pbc.helpers import calculate_number_of_peaks_gottshalk_80_rule
 from pbc.plotting import plot_plateau, plot_sobp
 from pbc.sobp import SOBP
 
 
-def calculate_number_of_peaks_gottshalk_80_rule(peak_to_measure, domain, spread):
-    """
-    Calculate number of peaks optimal for SOBP optimization
-    using Gotshalck 80% rule.
-    """
-    temp_peak = copy(peak_to_measure)
-    temp_peak.weight = 1.0
-    width = temp_peak.width_at(domain=domain, val=0.8)
-    n_of_optimal_peaks = int(np.ceil(spread // width))
-    return n_of_optimal_peaks + 1
-
-
 def test_optimize(target_range, target_modulation):
-    """TODO: Just test some optimization options..."""
+    """Just test some optimization options..."""
     start, stop, step = 0, target_range + 2.5, 0.01
     test_sobp = SOBP(inp_peaks, def_domain=[start, stop, step])
     print(test_sobp)
     print(test_sobp.positions())
 
-    test_domain = np.arange(start, stop, step)
-    starting_sobp = test_sobp.overall_sum()
-    plt.plot(test_domain, starting_sobp, label='sum', color='red')
-    plt.show()
+    plot_sobp(start=start,
+              stop=stop,
+              step=step,
+              sobp_object=test_sobp,
+              helper_lines=False)
 
     time_st = time.time()
     res = test_sobp.optimize_modulation(target_modulation=target_modulation, target_range=target_range)
@@ -42,12 +30,20 @@ def test_optimize(target_range, target_modulation):
     print(res)
 
     # apply calculated weights to peaks
-    re = res['x']
+    optimization_results = res['x']
     for peak_idx, peak_object in enumerate(test_sobp.component_peaks):
-        peak_object.weight = re[peak_idx]
+        peak_object.weight = optimization_results[peak_idx]
 
-    plot_sobp(start=start, stop=stop, sobp_object=test_sobp)
-    plot_plateau(start=start, stop=stop, sobp_object=test_sobp, target_modulation=target_modulation)
+    plot_sobp(start=start,
+              stop=stop,
+              sobp_object=test_sobp,
+              target_modulation=target_modulation,
+              target_range=target_range,
+              helper_lines=True)
+
+    plot_plateau(sobp_object=test_sobp,
+                 target_modulation=target_modulation,
+                 target_range=target_range)
 
 
 if __name__ == '__main__':
@@ -70,12 +66,13 @@ if __name__ == '__main__':
     testing_peak = BraggPeak(x_peak, y_peak)
     testing_domain = np.arange(0, 30, 0.001)
 
-    desired_range = testing_peak.range(testing_domain)
-    desired_modulation = 20.0
+    desired_range = 15.0  # testing_peak.range(testing_domain)
+    desired_modulation = 15.0
 
     number_of_peaks = calculate_number_of_peaks_gottshalk_80_rule(peak_to_measure=testing_peak,
-                                                                  domain=testing_domain, spread=desired_modulation)
-    print(number_of_peaks)
+                                                                  domain=testing_domain,
+                                                                  spread=desired_modulation)
+    print("Got %s peaks from Gottshalck rule calculation." % number_of_peaks)
 
     # use Gottshalk Rule result to generate list of input peaks
     inp_peaks = [BraggPeak(x_peak, y_peak) for i in range(number_of_peaks)]
