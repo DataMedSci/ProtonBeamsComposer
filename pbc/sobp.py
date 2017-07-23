@@ -46,7 +46,7 @@ class SOBP(object):
                 tmp_peak.weight = wei
                 self.component_peaks.append(tmp_peak)
         else:
-            raise ValueError('Unsupported init data.')
+            raise ValueError("Unsupported init data.")
         if def_domain:
             try:
                 self._def_domain = np.arange(def_domain[0], def_domain[1], def_domain[2])
@@ -80,7 +80,7 @@ class SOBP(object):
         else:
             raise ValueError("No domain specified (argument/default)!")
 
-    def _section_bounds_idx(self, domain=None, threshold=0.9, threshold_right=None):
+    def _section_bounds_idx(self, domain=None, threshold=0.9, threshold_right=0.9):
         """
         Helper function.
 
@@ -100,11 +100,12 @@ class SOBP(object):
         :param threshold_right: additional parameter for threshold value on the right side
         """
         domain = self._has_defined_domain(domain)
-        val_arr = self.overall_sum(domain)
-        if not threshold_right:
-            threshold_right = threshold
+        val_arr = self.overall_sum(domain=domain, rescale_to_one=False)
         if threshold > val_arr.max() or threshold_right > val_arr.max():
-            raise ValueError('Desired values cannot be greater than max in SOBP, which is %s!' % val_arr.max())
+            val_arr = self.overall_sum(domain=domain, rescale_to_one=True)
+            logger.warning("Division by max value in SOBP occurred!")
+            if threshold > val_arr.max() or threshold_right > val_arr.max():
+                raise ValueError("Desired values cannot be greater than max in SOBP, which is %s!" % val_arr.max())
         tmp_idx_left = []
         tmp_idx_right = []
         # iterate over known peak max positions and check if values are satisfying our val criteria
@@ -162,7 +163,7 @@ class SOBP(object):
     def def_domain(self, domain_array):
         self._def_domain = domain_array
 
-    def overall_sum(self, domain=None):
+    def overall_sum(self, domain=None, rescale_to_one=False):
         """
         Calculate sum of peaks included in SOBP using given or default domain.
         If none of the above is specified - raise ValueError.
@@ -173,8 +174,8 @@ class SOBP(object):
             tmp_peak = peak.evaluate(domain)
             tmp_sobp.append(tmp_peak)
         tmp_sum = sum(tmp_sobp)
-        # todo: rethink this one
-        # tmp_sum /= tmp_sum.max()
+        if rescale_to_one:
+            tmp_sum /= tmp_sum.max()
         return tmp_sum
 
     def positions(self):
@@ -191,7 +192,7 @@ class SOBP(object):
         _, right_idx = self._section_bounds_idx(domain, val)
         return domain[right_idx]
 
-    def modulation(self, domain=None, left_threshold=0.9, right_threshold=None):
+    def modulation(self, domain=None, left_threshold=0.9, right_threshold=0.9):
         domain = self._has_defined_domain(domain)
         left_idx, right_idx = self._section_bounds_idx(domain, left_threshold, right_threshold)
         return domain[right_idx] - domain[left_idx]
@@ -244,7 +245,7 @@ class SOBP(object):
         initial_weights = np.array(initial_weights)
         res = scipy.optimize.minimize(self._optimization_helper, initial_weights, args=(target_modulation, target_range),
                                       bounds=bound_list, method='L-BFGS-B', options={
-                                            "disp": True, 'eps': 1e-06, 'ftol': 1e-20, 'gtol': 1e-20,  'maxls': 40
+                                            'disp': True, 'eps': 1e-06, 'ftol': 1e-20, 'gtol': 1e-20,  'maxls': 40
                                         })
         return res
 
@@ -253,7 +254,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import pandas as pd
 
-    with open(join("..", "bp.csv"), 'r') as bp_file:
+    with open(join("..", "data", "bp.csv"), 'r') as bp_file:
         data = pd.read_csv(bp_file, sep=';')
 
     x_peak = data[data.columns[0]].as_matrix()
@@ -306,8 +307,8 @@ if __name__ == '__main__':
     rr = test_domain[rr]
     plt.plot([ll, ll], [0, mx], color='yellow')
     plt.plot([rr, rr], [0, mx], color='orange')
-    plt.plot([start, stop], [t, t], color='yellow', label=str(t) + '; left (val=%s)' % ll)
-    plt.plot([start, stop], [t2, t2], color='orange', label=str(t2) + '; right (val=%s)' % rr)
+    plt.plot([start, stop], [t, t], color='yellow', label=str(t) + "; left (val=%s)" % ll)
+    plt.plot([start, stop], [t2, t2], color='orange', label=str(t2) + "; right (val=%s)" % rr)
 
     tmp_fwhm = test_sobp.fwhm()
     tmp_range = test_sobp.range(val=t)
