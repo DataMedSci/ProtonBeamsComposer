@@ -208,21 +208,29 @@ class SOBP(object):
         plateau_factor = self._flat_plateau_factor_helper(spread=target_modulation, end=target_range)
         return spread_factor + plateau_factor**3
 
-    def optimize_modulation(self, target_modulation, target_range=None):
+    def optimize_modulation(self, target_modulation, target_range=None, optimization_options=None):
         """
         Optimise weights of peaks in SOBP object. This function does not
         move peaks from original position, it only manipulates their weights.
 
         :param target_modulation:
         :param target_range:
+        :param optimization_options: option dict passed to scipy.optimization function
         :return:
         """
+        if optimization_options:
+            options = optimization_options
+        else:
+            options = {'disp': True, 'eps': 1e-8, 'ftol': 1e-20, 'gtol': 1e-20,  'maxls': 40}
+
         initial_weights = []
         bound_list = []
         furthest_range = 0.0
+        lower_bound = 0.0 + options['eps']
+        upper_bound = 1.0 - options['eps']
         for peak in self.component_peaks:
             initial_weights.append(peak.weight)
-            bound_list.append((.01, .99))
+            bound_list.append((lower_bound, upper_bound))
             if peak.position > furthest_range:
                 furthest_range = peak.position
         if target_range is None:
@@ -233,9 +241,7 @@ class SOBP(object):
                                       args=(target_modulation, target_range),
                                       bounds=bound_list,
                                       method='L-BFGS-B',
-                                      options={
-                                          'disp': True, 'eps': 1e-06, 'ftol': 1e-20, 'gtol': 1e-20,  'maxls': 40
-                                      })
+                                      options=options)
         return res
 
 if __name__ == '__main__':
