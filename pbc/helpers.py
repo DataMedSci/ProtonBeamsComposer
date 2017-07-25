@@ -1,4 +1,5 @@
 from copy import copy
+from os.path import join
 
 import numpy as np
 
@@ -31,3 +32,15 @@ def argmin_with_condition(array, val):
     else:
         # Nothing found, return zero idx as numpy does in such situations
         return 0
+
+
+def dump_data_to_file(domain, values, file_name):
+    temp = np.column_stack((domain, values))
+    with open(file=file_name, mode='wb') as dump_file:
+        np.savetxt(dump_file, temp, delimiter=";", fmt='%.18f', newline='\n')
+
+
+def load_data_from_dump(file_name):
+    with open(file=file_name, mode='r') as dump_file:
+        x, y = np.loadtxt(dump_file, delimiter=';', usecols=(0, 1), unpack=True)
+    return x, y

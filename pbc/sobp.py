@@ -5,7 +5,7 @@ import numpy as np
 import scipy.optimize
 
 from pbc.bragg_peak import BraggPeak
-from pbc.helpers import argmin_with_condition
+from pbc.helpers import argmin_with_condition, dump_data_to_file, load_data_from_dump
 
 logger = logging.getLogger(__name__)
 
@@ -316,4 +316,6 @@ if __name__ == '__main__':
     plt.legend()
     plt.title("FWHM: {0:.2f}, range: {1:.2f}, modulation: {2:.2f} (l_threshold:{3:.2f},r_threshold:{4:.2f})"
               .format(tmp_fwhm, tmp_range, tmp_modulation, t, t2))
-    plt.show()
+    # plt.show()
+
+    dump_data_to_file(test_domain, sobp_vals, 'test.csv')

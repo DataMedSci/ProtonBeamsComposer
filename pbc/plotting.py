@@ -3,11 +3,13 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 
+from pbc.helpers import dump_data_to_file
+
 logger = logging.getLogger(__name__)
 
 
 def plot_sobp(start, stop, sobp_object, target_modulation=None, target_range=None, step=0.01, helper_lines=True,
-              save_plot=False, save_path=None, display_plot=True):
+              save_plot=False, save_path=None, display_plot=True, dump_data=False, file_path=''):
     """
     Plot SOBP from given starting point to stop point
 
@@ -21,6 +23,8 @@ def plot_sobp(start, stop, sobp_object, target_modulation=None, target_range=Non
     :param save_plot: if True - will attempt to save plot to disk
     :param save_path: path with extension where the plot will be saved, ignored when save_plot is False
     :param display_plot: if True - displays a standard window with plot
+    :param dump_data:
+    :param file_path:
     """
     mod = sobp_object.modulation()
     ran = sobp_object.range()
@@ -44,12 +48,15 @@ def plot_sobp(start, stop, sobp_object, target_modulation=None, target_range=Non
         except ValueError as e:
             logger.error("Error occurred while saving SOBP plot!\n{0}".format(e))
 
+    if dump_data and file_path:
+        dump_data_to_file(plot_domain, sobp_vals, file_name=file_path)
+
     if display_plot:
         plt.show()
 
 
 def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper_lines=True, save_plot=False,
-                 save_path=None, display_plot=True):
+                 save_path=None, display_plot=True, dump_data=False, file_path=''):
     """
     Plot SOBP plateau
 
@@ -61,6 +68,8 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
     :param save_plot: if True - will attempt to save plot to disk
     :param save_path: path with extension where the plot will be saved, ignored when save_plot is False
     :param display_plot: if True - displays a standard window with plot
+    :param dump_data:
+    :param file_path:
     """
     mod = sobp_object.modulation()
     ran = sobp_object.range()
@@ -107,6 +116,9 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
             plt.savefig(save_path)
         except ValueError as e:
             logger.error("Error occurred while saving SOBP plot!\n{0}".format(e))
+
+    if dump_data and file_path:
+        dump_data_to_file(extended_plateau_domain, extended_plateau_vals, file_name=file_path)
 
     if display_plot:
         plt.show()
