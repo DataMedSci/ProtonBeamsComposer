@@ -173,7 +173,7 @@ class SOBP(object):
         _, right_idx = self._section_bounds_idx(domain, val)
         return domain[right_idx]
 
-    def modulation(self, domain=None, left_threshold=0.9, right_threshold=0.9):
+    def modulation(self, domain=None, left_threshold=0.99, right_threshold=0.9):
         """Calculate modulation using given thresholds"""
         domain = self._has_defined_domain(domain)
         left_idx, right_idx = self._section_bounds_idx(domain, left_threshold, right_threshold)

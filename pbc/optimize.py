@@ -24,12 +24,14 @@ def test_optimize(input_peaks, target_range, target_modulation):
               stop=stop,
               step=step,
               sobp_object=test_sobp,
-              helper_lines=False)
+              helper_lines=False,
+              save_plot=False,
+              display_plot=True)
 
     time_st = time.time()
     res = test_sobp.optimize_modulation(target_modulation=target_modulation, target_range=target_range)
-    print("---------------------------------------------------")
-    print("Time: %.2f (s)" % (time.time() - time_st))
+    logger.info("Time: {0:.2f} (s)".format(time.time() - time_st))
+
     print(res)
 
     # apply calculated weights to peaks
@@ -42,17 +44,23 @@ def test_optimize(input_peaks, target_range, target_modulation):
               sobp_object=test_sobp,
               target_modulation=target_modulation,
               target_range=target_range,
-              helper_lines=True)
+              helper_lines=True,
+              save_plot=True,
+              save_path='')
 
     plot_plateau(sobp_object=test_sobp,
                  target_modulation=target_modulation,
                  target_range=target_range)
 
 
-def main(input_args):
+def basic_optimization(input_args):
+    """Test overall optimization capabilities for given spread and range"""
     if input_args.spread > input_args.range:
         logger.critical("Spread cannot be greater than range!")
-        return
+        return -1
+    elif not input_args.full:
+        desired_range = input_args.range
+        desired_modulation = input_args.spread
 
     with open(join('data', 'bp.csv'), 'r') as bp_file:
         data = pd.read_csv(bp_file, sep=';')
@@ -67,14 +75,24 @@ def main(input_args):
     positions = pos_we_data['position'].as_matrix()
     weights = pos_we_data['weight'].as_matrix()
 
-    print("Positions: %s" % positions)
-    print("Weights: %s " % weights)
+    logger.debug("Positions: {0}".format(positions))
+    logger.debug("Weights: {0}".format(weights))
 
     testing_peak = BraggPeak(x_peak, y_peak)
     testing_domain = np.arange(0, 30, 0.001)
 
-    desired_range = 15.0  # testing_peak.range(testing_domain)
-    desired_modulation = 15.0
+    if input_args.full == 'both':
+        desired_range = testing_peak.range(testing_domain)
+        desired_modulation = desired_range
+    elif input_args.full == 'range':
+        desired_range = testing_peak.range(testing_domain)
+        desired_modulation = input_args.spread
+    elif input_args.full == 'spread':
+        desired_range = input_args.range
+        desired_modulation = desired_range
+
+    if input_args.halfmod:
+        desired_modulation = desired_range / 2
 
     number_of_peaks = calculate_number_of_peaks_gottshalk_80_rule(peak_to_measure=testing_peak,
                                                                   domain=testing_domain,

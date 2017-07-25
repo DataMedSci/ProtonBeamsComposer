@@ -6,7 +6,7 @@ import numpy as np
 def calculate_number_of_peaks_gottshalk_80_rule(peak_to_measure, domain, spread):
     """
     Calculate number of peaks optimal for SOBP optimization
-    using Gotshalck 80% rule.
+    on given spread using Gottshalck 80% rule.
     """
     temp_peak = copy(peak_to_measure)
     temp_peak.weight = 1.0
