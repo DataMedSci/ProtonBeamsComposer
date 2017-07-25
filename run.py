@@ -13,6 +13,7 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('-q', '--quiet', action='store_true')
     parser.add_argument('-p', '--halfmod', action='store_true')
+    parser.add_argument('-n', '--no-plot', action='store_true')
     input_args = parser.parse_args(argv[1:])
 
     if input_args.verbose:

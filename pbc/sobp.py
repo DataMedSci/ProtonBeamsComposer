@@ -5,7 +5,7 @@ import numpy as np
 import scipy.optimize
 
 from pbc.bragg_peak import BraggPeak
-from pbc.helpers import argmin_with_condition, dump_data_to_file, load_data_from_dump
+from pbc.helpers import argmin_with_condition, dump_data_to_file
 
 logger = logging.getLogger(__name__)
 
@@ -202,9 +202,9 @@ class SOBP(object):
             raise ValueError("Length check failed for data to unpack...")
         for idx, peak in enumerate(self.component_peaks):
             peak.weight = data_to_unpack[idx]
-        spread_factor = (self.modulation() - target_modulation)**2
+        # spread_factor = (self.modulation() - target_modulation)**2
         plateau_factor = self._flat_plateau_factor_helper(spread=target_modulation, end=target_range)
-        return spread_factor + plateau_factor**3
+        return plateau_factor**3
 
     def optimize_modulation(self, target_modulation, target_range=None, optimization_options=None):
         """

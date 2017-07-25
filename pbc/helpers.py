@@ -1,7 +1,9 @@
 from copy import copy
-from os.path import join
 
 import numpy as np
+
+__all__ = ['calculate_number_of_peaks_gottshalk_80_rule', 'argmin_with_condition', 'dump_data_to_file',
+           'load_data_from_dump', 'diff_max_from_range_90', 'diff_max_from_left_99', 'make_precise_end_calculations']
 
 
 def calculate_number_of_peaks_gottshalk_80_rule(peak_to_measure, domain, spread):
@@ -44,3 +46,24 @@ def load_data_from_dump(file_name):
     with open(file=file_name, mode='r') as dump_file:
         x, y = np.loadtxt(dump_file, delimiter=';', usecols=(0, 1), unpack=True)
     return x, y
+
+
+def diff_max_from_range_90(peak):
+    pos = peak.position
+    tmp_dom = np.arange(pos, pos + 2, 0.0001)
+    ran = peak.range(tmp_dom, val=0.900)
+    return ran - pos
+
+
+def diff_max_from_left_99(peak):
+    pos = peak.position
+    tmp_dom = np.arange(pos - 1, pos + 1, 0.0001)
+    left_99_idx = peak._calculate_idx_for_given_height_value(tmp_dom, 0.990)[0]
+    left_99_val = tmp_dom[left_99_idx]
+    return abs(pos - left_99_val)
+
+
+def make_precise_end_calculations(sobp_object):
+    prec_dom = np.arange(-2, 30, 0.0001)
+    ll, rr = sobp_object._section_bounds_idx(domain=prec_dom, threshold=0.99, threshold_right=0.90)
+    return prec_dom[ll], prec_dom[rr]
