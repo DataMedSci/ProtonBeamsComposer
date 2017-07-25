@@ -7,8 +7,6 @@ import scipy.optimize
 from pbc.bragg_peak import BraggPeak
 from pbc.helpers import argmin_with_condition
 
-
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 

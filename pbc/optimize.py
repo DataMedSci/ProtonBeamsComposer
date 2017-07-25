@@ -1,6 +1,7 @@
 import time
 from os.path import join
 
+import logging
 import pandas as pd
 import numpy as np
 
@@ -9,11 +10,13 @@ from pbc.helpers import calculate_number_of_peaks_gottshalk_80_rule
 from pbc.plotting import plot_plateau, plot_sobp
 from pbc.sobp import SOBP
 
+logger = logging.getLogger(__name__)
 
-def test_optimize(target_range, target_modulation):
+
+def test_optimize(input_peaks, target_range, target_modulation):
     """Just test some optimization options..."""
     start, stop, step = 0, target_range + 2.5, 0.01
-    test_sobp = SOBP(inp_peaks, def_domain=[start, stop, step])
+    test_sobp = SOBP(input_peaks, def_domain=[start, stop, step])
     print(test_sobp)
     print(test_sobp.positions())
 
@@ -46,7 +49,11 @@ def test_optimize(target_range, target_modulation):
                  target_range=target_range)
 
 
-if __name__ == '__main__':
+def main(input_args):
+    if input_args.spread > input_args.range:
+        logger.critical("Spread cannot be greater than range!")
+        return
+
     with open(join('data', 'bp.csv'), 'r') as bp_file:
         data = pd.read_csv(bp_file, sep=';')
 
@@ -72,10 +79,11 @@ if __name__ == '__main__':
     number_of_peaks = calculate_number_of_peaks_gottshalk_80_rule(peak_to_measure=testing_peak,
                                                                   domain=testing_domain,
                                                                   spread=desired_modulation)
-    print("Got %s peaks from Gottshalck rule calculation." % number_of_peaks)
+
+    logger.info("Got %s peaks from Gottshalck rule calculation." % number_of_peaks)
 
     # use Gottshalk Rule result to generate list of input peaks
-    inp_peaks = [BraggPeak(x_peak, y_peak) for i in range(number_of_peaks)]
+    inp_peaks = [BraggPeak(x_peak, y_peak) for _ in range(number_of_peaks)]
 
     # base positions of peaks on GR result, range and desired modulation
     base_position = desired_range - desired_modulation
@@ -85,4 +93,4 @@ if __name__ == '__main__':
         peak.weight = 0.1  # weights[idx]
     inp_peaks[-1].weight = 0.9
 
-    test_optimize(desired_range, desired_modulation)
+    test_optimize(inp_peaks, desired_range, desired_modulation)

@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate
 
-logging.basicConfig(level=0)
 logger = logging.getLogger(__name__)
 
 
