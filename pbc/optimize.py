@@ -6,14 +6,15 @@ import pandas as pd
 import numpy as np
 
 from pbc.bragg_peak import BraggPeak
-from pbc.helpers import *  # calculate_number_of_peaks_gottshalk_80_rule, diff_max_from_left_99, diff_max_from_range_90
+from pbc.helpers import calculate_number_of_peaks_gottshalk_80_rule, diff_max_from_left_99, diff_max_from_range_90, \
+    make_precise_end_calculations
 from pbc.plotting import plot_plateau, plot_sobp
 from pbc.sobp import SOBP
 
 logger = logging.getLogger(__name__)
 
 
-def test_optimize(input_peaks, target_modulation, target_range, disable_plots=False, preview_start_plot=False):
+def optimization_wrapper(input_peaks, target_modulation, target_range, disable_plots=False, preview_start_plot=False):
     """Just test some optimization options..."""
     start, stop, step = 0, target_range + 2.5, 0.01
     test_sobp = SOBP(input_peaks, def_domain=[start, stop, step])
@@ -31,9 +32,9 @@ def test_optimize(input_peaks, target_modulation, target_range, disable_plots=Fa
 
     time_st = time.time()
     res = test_sobp.optimize_modulation(target_modulation=target_modulation, target_range=target_range)
-    logger.info("Time: {0:.2f} (s)".format(time.time() - time_st))
+    logger.info("Optimization function took {0:.2f} seconds".format(time.time() - time_st))
 
-    logger.info("\n{0}".format(res))
+    logger.info("Optimization output:\n{0}".format(res))
 
     # apply calculated weights to peaks
     optimization_results = res['x']
@@ -105,19 +106,17 @@ def basic_optimization(input_args):
     begin = base_position + push_first_peak
     end = desired_range - pull_back_last_peak
 
-    starting_positions = np.linspace(start=begin,
-                                     stop=end,
-                                     num=number_of_peaks)
+    starting_positions = np.linspace(start=begin, stop=end, num=number_of_peaks)
 
     for idx, peak in enumerate(inp_peaks):
         peak.position = starting_positions[idx]
         peak.weight = 0.1
     inp_peaks[-1].weight = 0.9
 
-    res_sobp_object = test_optimize(input_peaks=inp_peaks,
-                                    target_modulation=desired_modulation,
-                                    target_range=desired_range,
-                                    disable_plots=input_args.no_plot)
+    res_sobp_object = optimization_wrapper(input_peaks=inp_peaks,
+                                           target_modulation=desired_modulation,
+                                           target_range=desired_range,
+                                           disable_plots=input_args.no_plot)
 
     left_res, right_res = make_precise_end_calculations(res_sobp_object)
 

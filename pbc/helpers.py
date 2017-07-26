@@ -2,9 +2,6 @@ from copy import copy
 
 import numpy as np
 
-__all__ = ['calculate_number_of_peaks_gottshalk_80_rule', 'argmin_with_condition', 'dump_data_to_file',
-           'load_data_from_dump', 'diff_max_from_range_90', 'diff_max_from_left_99', 'make_precise_end_calculations']
-
 
 def calculate_number_of_peaks_gottshalk_80_rule(peak_to_measure, domain, spread):
     """
