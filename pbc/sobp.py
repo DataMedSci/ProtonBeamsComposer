@@ -58,6 +58,8 @@ class SOBP(object):
         else:
             self._def_domain = None
 
+        self._plateau_domain_for_optimization = None
+
     def __repr__(self):
         return "SOBP({0})".format(self.positions())
 
@@ -179,12 +181,18 @@ class SOBP(object):
         left_idx, right_idx = self._section_bounds_idx(domain, left_threshold, right_threshold)
         return domain[right_idx] - domain[left_idx]
 
-    def _flat_plateau_factor_helper(self, spread, end, target_val=1.0):
-        """Helper function for optimization - calculate how flat is SOBP plateau"""
-        plateau_domain = np.arange(end - spread, end, 0.1)
-        plateau = self.overall_sum(plateau_domain)
+    def _flat_plateau_factor_helper(self, target_val=1.0):  # , spread, end, target_val=1.0):
+        """
+        Helper function for optimization - calculate how flat is SOBP plateau
+        using square of differences between plateau points and target
+        horizontal line (function y = target_val)
+        """
+        plateau = self.overall_sum(self._plateau_domain_for_optimization)
         # iterate over plateau points and calculate diff from target
-        return sum([abs(pp - target_val) for pp in plateau])
+        return sum([abs(target_val - pp) for pp in plateau])
+        # diff = sum([(target_val - pp)**2 for pp in plateau])
+        # grad = -2 * sum()
+        # return diff
 
     def _optimization_helper(self, data_to_unpack, target_modulation, target_range):
         """
@@ -202,9 +210,8 @@ class SOBP(object):
             raise ValueError("Length check failed for data to unpack...")
         for idx, peak in enumerate(self.component_peaks):
             peak.weight = data_to_unpack[idx]
-        # spread_factor = (self.modulation() - target_modulation)**2
-        plateau_factor = self._flat_plateau_factor_helper(spread=target_modulation, end=target_range)
-        return plateau_factor**3
+        plateau_factor = self._flat_plateau_factor_helper()  # (spread=target_modulation, end=target_range)
+        return plateau_factor ** 2
 
     def optimize_modulation(self, target_modulation, target_range=None, optimization_options=None):
         """
@@ -219,21 +226,39 @@ class SOBP(object):
         if optimization_options:
             options = optimization_options
         else:
-            options = {'disp': True, 'eps': 1e-8, 'ftol': 1e-20, 'gtol': 1e-20,  'maxls': 40}
+            options = {
+                # 'disp': True,
+                'eps': 1e-8,
+                'ftol': 1e-12,
+                'gtol': 1e-12,
+                'maxls': 40,
+                'maxfun': 30000,
+                'maxiter': 15000,
+                'maxcor': 40,
+                # 'factr': 10.0,
+            }
 
         initial_weights = []
         bound_list = []
         furthest_range = 0.0
+        # weight for BP has to be 0 >= weight >=1 and optimization
+        # shifts weight by eps, so to prevent ValueErrors from BraggPeak.weight
+        # make the bounds smaller by eps
         lower_bound = 0.0 + options['eps']
         upper_bound = 1.0 - options['eps']
+
         for peak in self.component_peaks:
             initial_weights.append(peak.weight)
             bound_list.append((lower_bound, upper_bound))
             if peak.position > furthest_range:
                 furthest_range = peak.position
+
         if target_range is None:
             target_range = furthest_range
+
         initial_weights = np.array(initial_weights)
+        self._plateau_domain_for_optimization = np.arange(target_range - target_modulation, target_range, 0.1)
+
         res = scipy.optimize.minimize(self._optimization_helper,
                                       x0=initial_weights,
                                       args=(target_modulation, target_range),

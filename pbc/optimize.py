@@ -92,6 +92,9 @@ def basic_optimization(input_args):
                                                                   domain=testing_domain,
                                                                   spread=desired_modulation)
 
+    # in most cases this gives better results
+    # todo: make this a parameter
+    number_of_peaks += 1
     logger.info("Got %s peaks from Gottshalck rule calculation." % number_of_peaks)
 
     # use Gottshalk Rule result to generate list of input peaks
@@ -130,3 +133,36 @@ def basic_optimization(input_args):
                  target_range=desired_range - pull_back_last_peak,
                  dump_data=True,
                  dump_path='plateau.csv')
+
+    # calculate difference between desired range and actual SOBP range we got from optimization
+    right_error = desired_range - right_res
+
+    # todo: analyze Gottshalck rule calculation (probably right_error * 1.2 factor comes from there...)
+    corrected_starting_positions = np.linspace(start=begin, stop=end + right_error * 1.2, num=number_of_peaks)
+
+    for idx, peak in enumerate(inp_peaks):
+        peak.position = corrected_starting_positions[idx]
+        peak.weight = 0.1
+    inp_peaks[-1].weight = 0.9
+
+    res_sobp_object = optimization_wrapper(input_peaks=inp_peaks,
+                                           target_modulation=desired_modulation,
+                                           target_range=desired_range,
+                                           disable_plots=input_args.no_plot)
+
+    left_res, right_res = make_precise_end_calculations(res_sobp_object)
+
+    logger.info("\n\tPosition of 0.99 from left is {0}\n\tTarget val was: {1}\n\tDiff of left vals: {2}".format(
+                left_res, base_position, abs(base_position - left_res)))
+    logger.info("\n\tPosition of 0.9 from right {0}\n\tTarget val was: {1}\n\tDiff of right vals: {2}".format(
+                right_res, desired_range, abs(desired_range - right_res)))
+
+    new_right_error = abs(desired_range - right_res)
+    logger.log(25, "Corrected right end at 0.90:\n\tfrom: {0:.16f}\n\tto: {1:.16f}\n\tbetter by: {2:.16f}".format(
+               right_error, new_right_error, right_error - new_right_error))
+
+    plot_plateau(sobp_object=res_sobp_object,
+                 target_modulation=desired_modulation,
+                 target_range=desired_range - pull_back_last_peak,
+                 dump_data=True,
+                 dump_path='corrected_plateau.csv')
