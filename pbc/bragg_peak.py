@@ -96,8 +96,9 @@ class BraggPeak(object):
 if __name__ == '__main__':
     from os.path import join
     import pandas as pd
+    from beprof import profile
 
-    with open(join("..", "bp.csv"), 'r') as bp_file:
+    with open(join("..", "data", "bp.csv"), 'r') as bp_file:
         data = pd.read_csv(bp_file, sep=';')
 
     x_peak = data[data.columns[0]].as_matrix()
@@ -105,11 +106,12 @@ if __name__ == '__main__':
 
     a = BraggPeak(x_peak, y_peak)
 
-    a.weight = .95
-    a.position = 12.5
+    yy = np.vstack((x_peak, y_peak)).T
+    prof = profile.Profile(yy)
 
-    test_domain = np.arange(0, 30, .1)
-    kle = a.evaluate(test_domain)
-    print(a.range(test_domain))
-    plt.plot(test_domain, kle)
+    print("parameters of RS 0 peak from database")
+    print("left 99%", prof.x_at_y(0.99, reverse=False))
+    print("right 90%", prof.x_at_y(0.90, reverse=True))
+
+    plt.plot(prof.x, prof.y)
     plt.show()
