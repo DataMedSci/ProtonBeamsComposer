@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 
 from pbc.bragg_peak import BraggPeak
-from pbc.helpers import calculate_number_of_peaks_gottshalk_80_rule, diff_max_from_left_99, diff_max_from_range_90, \
+from pbc.helpers import calculate_number_of_peaks_gottschalk_80_rule, diff_max_from_left_99, diff_max_from_range_90, \
     make_precise_end_calculations
 from pbc.plotting import plot_plateau, plot_sobp
 from pbc.sobp import SOBP
@@ -88,16 +88,16 @@ def basic_optimization(input_args):
     if input_args.halfmod:
         desired_modulation = desired_range / 2
 
-    number_of_peaks = calculate_number_of_peaks_gottshalk_80_rule(peak_to_measure=testing_peak,
-                                                                  domain=testing_domain,
-                                                                  spread=desired_modulation)
+    number_of_peaks = calculate_number_of_peaks_gottschalk_80_rule(peak_to_measure=testing_peak,
+                                                                   domain=testing_domain,
+                                                                   spread=desired_modulation)
 
     # in most cases this gives better results
     # todo: make this a parameter
     number_of_peaks += 1
-    logger.info("Got %s peaks from Gottshalck rule calculation." % number_of_peaks)
+    logger.info("Got %s peaks from Gottschalk rule calculation." % number_of_peaks)
 
-    # use Gottshalk Rule result to generate list of input peaks
+    # use Gottschalk Rule result to generate list of input peaks
     inp_peaks = [BraggPeak(x_peak, y_peak) for _ in range(number_of_peaks)]
 
     # base positions of peaks on GR result, range and desired modulation
@@ -137,7 +137,7 @@ def basic_optimization(input_args):
     # calculate difference between desired range and actual SOBP range we got from optimization
     right_error = desired_range - right_res
 
-    # todo: analyze Gottshalck rule calculation (probably right_error * 1.2 factor comes from there...)
+    # todo: analyze Gottschalk rule calculation (probably right_error * 1.2 factor comes from there...)
     corrected_starting_positions = np.linspace(start=begin, stop=end + right_error * 1.2, num=number_of_peaks)
 
     for idx, peak in enumerate(inp_peaks):

@@ -84,12 +84,11 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
 
     # horizontal helper lines
     if helper_lines:
-        # plt.plot([beginning - 1.0, ending + 1.0], [0.9, 0.9], color='yellow')
-        plt.plot([beginning - 1.0, ending + 1.0], [0.98, 0.98], color='orange')
+        # plt.plot([beginning - 1.0, ending + 1.0], [0.98, 0.98], color='orange')
         plt.plot([beginning - 1.0, ending + 1.0], [0.99, 0.99], color='green')
         plt.plot([beginning - 1.0, ending + 1.0], [1, 1], color='blue')
-        plt.plot([beginning - 1.0, ending + 1.0], [1.02, 1.02], color='orange')
         plt.plot([beginning - 1.0, ending + 1.0], [1.01, 1.01], color='green')
+        # plt.plot([beginning - 1.0, ending + 1.0], [1.02, 1.02], color='orange')
         # vertical helper lines
         plt.plot([beginning, beginning], [0.94, 1.04], color='purple', label='begin = %s' % beginning)
         plt.plot([ending, ending], [0.96, 1.04], color='blue', label='end = %s' % ending)
@@ -102,14 +101,14 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
     # limit axes
     axes = plt.gca()
     axes.set_xlim([beginning - 1.0, ending + 1.0])
-    axes.set_ylim([0.96, 1.04])
+    axes.set_ylim([0.9875, 1.0125])
     # extract labels and create legend
     handles, labels = axes.get_legend_handles_labels()
     axes.legend(handles, labels)
 
     # set some denser labels on axis
     plt.xticks(np.arange(beginning - 1.0, ending + 1.1, 1))
-    plt.yticks(np.arange(0.96, 1.04, 0.01))
+    plt.yticks(np.arange(0.9875, 1.0125, 0.0025))
 
     if save_plot and save_path:
         try:

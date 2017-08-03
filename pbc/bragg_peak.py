@@ -10,10 +10,13 @@ logger = logging.getLogger(__name__)
 class BraggPeak(object):
     def __init__(self, bp_domain, bp_vals):
         """
-        BraggPeak is a function created from bp_domain and bp_vals
-        using scipy.interpolate module. Whenever a function is called,
+        BraggPeak object is a function created from bp_domain and bp_vals
+        using scipy.interpolate module. Whenever a class function is called,
         this calculated spline function along with domain specified by user
-        are used. bp_domain and bp_vals are lost after initialization.
+        is used.
+
+        :param bp_domain: used as a domain in interpolation, lost after class initialization
+        :param bp_vals: used as values in interpolation, lost after class initialization
         """
         if len(bp_domain) != len(bp_vals):
             raise ValueError("Domain and values have different lengths!")
@@ -25,17 +28,15 @@ class BraggPeak(object):
                      "Calculated spline:\n%s"
                      % (self.initial_position, self.spline))
 
-    # todo: add more class methods like __len__, __setitem__
-    # https://docs.python.org/3/reference/datamodel.html
-    def __str__(self):
+    def __repr__(self):
         return str("{0} with position: {1} and weight: {2}".format(
                    self.__class__.__name__, self.position, self.weight))
 
-    def __repr__(self):
-        return repr(self.spline)
+    def __str__(self):
+        return str(self.spline)
 
     def __getitem__(self, point):
-        """Returns value for given x axis point"""
+        """Returns value for given point on X-axis"""
         return self.spline(point)
 
     @property
@@ -101,15 +102,17 @@ if __name__ == '__main__':
     with open(join("..", "data", "bp.csv"), 'r') as bp_file:
         data = pd.read_csv(bp_file, sep=';')
 
-    x_peak = data[data.columns[0]].as_matrix()
-    y_peak = data[data.columns[1]].as_matrix()
+    x_peak = data[data.columns[0]].dropna(axis=0, how='all')
+    y_peak = data[data.columns[1]].dropna(axis=0, how='all')
+
+    x_peak = x_peak.as_matrix()
+    y_peak = y_peak.as_matrix()
 
     a = BraggPeak(x_peak, y_peak)
 
     yy = np.vstack((x_peak, y_peak)).T
     prof = profile.Profile(yy)
 
-    print("parameters of RS 0 peak from database")
     print("left 99%", prof.x_at_y(0.99, reverse=False))
     print("right 90%", prof.x_at_y(0.90, reverse=True))
 
