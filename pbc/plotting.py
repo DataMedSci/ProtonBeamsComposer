@@ -3,13 +3,13 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 
-from pbc.helpers import dump_data_to_file
+from pbc.helpers import dump_data_to_file, load_data_from_dump
 
 logger = logging.getLogger(__name__)
 
 
 def plot_sobp(start, stop, sobp_object, target_modulation=None, target_range=None, step=0.01, helper_lines=True,
-              save_plot=False, save_path=None, display_plot=True, dump_data=False, file_path=''):
+              save_plot=False, plot_path=None, display_plot=True, dump_data=False, file_path=''):
     """
     Plot SOBP from given starting point to stop point
 
@@ -21,7 +21,7 @@ def plot_sobp(start, stop, sobp_object, target_modulation=None, target_range=Non
     :param step: specifies how dense should be the plot
     :param helper_lines: turns on/off vertical and horizontal helper lines on the plot
     :param save_plot: if True - will attempt to save plot to disk
-    :param save_path: path with extension where the plot will be saved, ignored when save_plot is False
+    :param plot_path: path with extension where the plot will be saved, ignored when save_plot is False
     :param display_plot: if True - displays a standard window with plot
     :param dump_data:
     :param file_path:
@@ -41,10 +41,10 @@ def plot_sobp(start, stop, sobp_object, target_modulation=None, target_range=Non
 
     plt.plot(plot_domain, sobp_vals, color='red')
 
-    if save_plot and save_path:
+    if save_plot and plot_path:
         try:
-            logger.info("Saving SOBP plot as {0}".format(save_path))
-            plt.savefig(save_path)
+            logger.info("Saving SOBP plot as {0}".format(plot_path))
+            plt.savefig(plot_path)
         except ValueError as e:
             logger.error("Error occurred while saving SOBP plot!\n{0}".format(e))
 
@@ -56,7 +56,7 @@ def plot_sobp(start, stop, sobp_object, target_modulation=None, target_range=Non
 
 
 def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper_lines=True, save_plot=False,
-                 save_path=None, display_plot=True, dump_data=False, dump_path=''):
+                 plot_path=None, display_plot=True, dump_data=False, dump_path=''):
     """
     Plot SOBP plateau
 
@@ -66,7 +66,7 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
     :param step: specifies how dense should be the plot
     :param helper_lines: turns on/off vertical and horizontal helper lines on the plot
     :param save_plot: if True - will attempt to save plot to disk
-    :param save_path: path with extension where the plot will be saved, ignored when save_plot is False
+    :param plot_path: path with extension where the plot will be saved, ignored when save_plot is False
     :param display_plot: if True - displays a standard window with plot
     :param dump_data:
     :param dump_path:
@@ -110,10 +110,10 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
     plt.xticks(np.arange(beginning - 1.0, ending + 1.1, 1))
     plt.yticks(np.arange(0.9875, 1.0125, 0.0025))
 
-    if save_plot and save_path:
+    if save_plot and plot_path:
         try:
-            logger.info("Saving SOBP plot as {0}".format(save_path))
-            plt.savefig(save_path)
+            logger.info("Saving SOBP plot as {0}".format(plot_path))
+            plt.savefig(plot_path)
         except ValueError as e:
             logger.error("Error occurred while saving SOBP plot!\n{0}".format(e))
 
@@ -122,3 +122,10 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
 
     if display_plot:
         plt.show()
+
+
+def make_plots_from_file(file_path):
+    x_peak, y_peak = load_data_from_dump(file_path)
+
+    plt.plot(x_peak, y_peak)
+    plt.show()

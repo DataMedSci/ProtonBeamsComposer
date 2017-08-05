@@ -4,7 +4,6 @@ from os.path import join
 import logging
 import pandas as pd
 import numpy as np
-from beprof import profile
 
 from pbc.bragg_peak import BraggPeak
 from pbc.helpers import calculate_number_of_peaks_gottschalk_80_rule, diff_max_from_left_99, diff_max_from_range_90, \
@@ -67,6 +66,8 @@ def basic_optimization(input_args):
         desired_range = input_args.range
         desired_modulation = input_args.spread
 
+    # this is some measured data generated using DataMedSci/pymchelper --plotdata
+    # option and SHIELD-HIT12A simulation results
     with open(join('data', 'cydos1.dat'), 'r') as bp_file:
         data = pd.read_csv(bp_file, sep=' ')
 
@@ -79,15 +80,18 @@ def basic_optimization(input_args):
         x_peak *= 10
         y_peak *= 10
 
+    # we want this to be in range <0; 1>
     y_peak /= y_peak.max()
 
     from scipy.signal import savgol_filter
-
+    # trying to smooth the noise, this window worked well on dataset with 3500 points
+    # (100 points per millimeter) probably it should be calculated based on input
     y_peak = savgol_filter(y_peak, 31, 3)
 
     testing_peak = BraggPeak(x_peak, y_peak)
     testing_domain = np.arange(0, 30, 0.001)
 
+    # for debugging, will be removed later
     import matplotlib.pyplot as plt
     plt.plot(testing_domain, testing_peak.evaluate(testing_domain))
     plt.show()
@@ -149,7 +153,9 @@ def basic_optimization(input_args):
                  target_modulation=desired_modulation,
                  target_range=desired_range - pull_back_last_peak,
                  dump_data=True,
-                 dump_path='plateau.csv')
+                 dump_path='plateau.csv',
+                 save_plot=True,
+                 plot_path='plateau.png')
 
     # calculate difference between desired range and actual SOBP range we got from optimization
     right_error = desired_range - right_res
@@ -182,4 +188,6 @@ def basic_optimization(input_args):
                  target_modulation=desired_modulation,
                  target_range=desired_range - pull_back_last_peak,
                  dump_data=True,
-                 dump_path='corrected_plateau.csv')
+                 dump_path='corrected_plateau.csv',
+                 save_plot=True,
+                 plot_path='corrected_plateau.png')
