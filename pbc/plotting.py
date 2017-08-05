@@ -124,8 +124,8 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
         plt.show()
 
 
-def make_plots_from_file(file_path):
-    x_peak, y_peak = load_data_from_dump(file_path)
+def make_plots_from_file(file_path, delimeter=';'):
+    x_peak, y_peak = load_data_from_dump(file_path, delimeter)
 
     plt.plot(x_peak, y_peak)
     plt.show()
