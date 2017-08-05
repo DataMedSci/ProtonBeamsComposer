@@ -4,6 +4,7 @@ from os.path import join
 import logging
 import pandas as pd
 import numpy as np
+from beprof import profile
 
 from pbc.bragg_peak import BraggPeak
 from pbc.helpers import calculate_number_of_peaks_gottschalk_80_rule, diff_max_from_left_99, diff_max_from_range_90, \
@@ -66,14 +67,30 @@ def basic_optimization(input_args):
         desired_range = input_args.range
         desired_modulation = input_args.spread
 
-    with open(join('data', 'bp.csv'), 'r') as bp_file:
-        data = pd.read_csv(bp_file, sep=';')
+    with open(join('data', 'cydos1.dat'), 'r') as bp_file:
+        data = pd.read_csv(bp_file, sep=' ')
 
     x_peak = data[data.columns[0]].as_matrix()
     y_peak = data[data.columns[1]].as_matrix()
 
+    if x_peak.max() < 10:
+        # todo: change this to parameter maybe? whatever the solution
+        # we should stick to one format, e.g. millimeters on X-axis
+        x_peak *= 10
+        y_peak *= 10
+
+    y_peak /= y_peak.max()
+
+    from scipy.signal import savgol_filter
+
+    y_peak = savgol_filter(y_peak, 31, 3)
+
     testing_peak = BraggPeak(x_peak, y_peak)
     testing_domain = np.arange(0, 30, 0.001)
+
+    import matplotlib.pyplot as plt
+    plt.plot(testing_domain, testing_peak.evaluate(testing_domain))
+    plt.show()
 
     if input_args.full == 'both':
         desired_range = testing_peak.range(testing_domain)

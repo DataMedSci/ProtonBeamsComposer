@@ -80,7 +80,10 @@ class BraggPeak(object):
         merge_idx = val_arr.argmax()
         left = val_arr[:merge_idx]
         right = val_arr[merge_idx:]
-        idx_left = (np.abs(left - val)).argmin()
+        try:
+            idx_left = (np.abs(left - val)).argmin()
+        except ValueError:
+            idx_left = None
         idx_right = (np.abs(right - val)).argmin()
         return idx_left, merge_idx + idx_right
 
@@ -98,15 +101,20 @@ if __name__ == '__main__':
     from os.path import join
     import pandas as pd
     from beprof import profile
+    from scipy.signal import savgol_filter
 
-    with open(join("..", "data", "bp.csv"), 'r') as bp_file:
-        data = pd.read_csv(bp_file, sep=';')
+    with open(join('..', 'data', 'cydos1.dat'), 'r') as bp_file:
+        data = pd.read_csv(bp_file, sep=' ')
 
     x_peak = data[data.columns[0]].dropna(axis=0, how='all')
     y_peak = data[data.columns[1]].dropna(axis=0, how='all')
 
     x_peak = x_peak.as_matrix()
     y_peak = y_peak.as_matrix()
+
+    y_peak = savgol_filter(y_peak, 31, 3)
+
+    y_peak /= y_peak.max()
 
     a = BraggPeak(x_peak, y_peak)
 
@@ -116,5 +124,7 @@ if __name__ == '__main__':
     print("left 99%", prof.x_at_y(0.99, reverse=False))
     print("right 90%", prof.x_at_y(0.90, reverse=True))
 
-    plt.plot(prof.x, prof.y)
+    # they should cover each other
+    plt.plot(prof.x, prof.y, 'r')
+    plt.plot(x_peak, y_peak, 'b')
     plt.show()

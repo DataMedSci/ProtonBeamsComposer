@@ -227,7 +227,7 @@ class SOBP(object):
             options = optimization_options
         else:
             options = {
-                # 'disp': True,
+                'disp': True,
                 'eps': 1e-8,  # If jac is approximated, use this value for the step size.
                 'ftol': 1e-12,
                 'gtol': 1e-12,  # Gradient norm must be less than gtol before successful termination.
