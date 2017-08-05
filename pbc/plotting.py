@@ -124,8 +124,37 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
         plt.show()
 
 
-def make_plots_from_file(file_path, delimeter=';'):
+def make_plots_from_file(file_path, delimeter=';', plottype=None, save_path=None):
     x_peak, y_peak = load_data_from_dump(file_path, delimeter)
 
-    plt.plot(x_peak, y_peak)
+    if plottype == "sobp":
+        # todo: for now just return standard plot
+        plt.plot(x_peak, y_peak)
+    elif plottype == "plateau":
+        beginning = x_peak[0]
+        ending = x_peak[-1]
+
+        # horizontal helper lines
+        plt.plot([beginning - 1.0, ending + 1.0], [0.98, 0.98], color='orange')
+        plt.plot([beginning - 1.0, ending + 1.0], [0.99, 0.99], color='green')
+        plt.plot([beginning - 1.0, ending + 1.0], [1, 1], color='blue')
+        plt.plot([beginning - 1.0, ending + 1.0], [1.01, 1.01], color='green')
+        plt.plot([beginning - 1.0, ending + 1.0], [1.02, 1.02], color='orange')
+
+        # main plot
+        plt.plot(x_peak, y_peak, 'r')
+
+        axes = plt.gca()
+        axes.set_xlim([beginning - 1.0, ending + 1.0])
+        axes.set_ylim([0.97, 1.03])
+
+        # set some denser labels on axis
+        plt.xticks(np.arange(beginning - 1.0, ending + 1.1, 1))
+        plt.yticks(np.arange(0.97, 1.03, 0.005))
+    else:
+        plt.plot(x_peak, y_peak)
+
+    if save_path:
+        plt.savefig(save_path)
+
     plt.show()

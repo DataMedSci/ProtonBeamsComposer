@@ -9,6 +9,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('file', type=str, help="Path to data file that should be used in plotting")
     parser.add_argument('-d', '--delimeter', type=str, help="Delimeter used in file")
+    parser.add_argument('-p', '--plottype', type=str, choices=['sobp', 'plateau', 'none'], default='none')
+    parser.add_argument('-s', '--savepath', type=str, help="If specified, used as path for saving the plot")
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('-q', '--quiet', action='store_true')
     input_args = parser.parse_args(argv[1:])
@@ -24,4 +26,7 @@ if __name__ == '__main__':
                         datefmt='%H:%M:%S',
                         level=log_level)
 
-    make_plots_from_file(input_args.file, input_args.delimeter)
+    make_plots_from_file(file_path=input_args.file,
+                         delimeter=input_args.delimeter,
+                         plottype=input_args.plottype,
+                         save_path=input_args.savepath)
