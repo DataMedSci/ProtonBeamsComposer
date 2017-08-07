@@ -68,33 +68,40 @@ def basic_optimization(input_args):
 
     # this is some measured data generated using DataMedSci/pymchelper --plotdata
     # option and SHIELD-HIT12A simulation results
-    with open(join('data', 'cydos1.dat'), 'r') as bp_file:
-        data = pd.read_csv(bp_file, sep=' ')
+    if not input_args.input_bp_file:
+        with open(join('data', 'cydos_new.csv'), 'r') as bp_file:
+            data = pd.read_csv(bp_file, sep=';')
+    else:
+        with open(input_args.input_bp_file, 'r') as bp_file:
+            data = pd.read_csv(bp_file, sep=input_args.delimiter)
 
     x_peak = data[data.columns[0]].as_matrix()
     y_peak = data[data.columns[1]].as_matrix()
 
+    # if it is in centimeters convert to millimeters
     if x_peak.max() < 10:
-        # todo: change this to parameter maybe? whatever the solution
-        # we should stick to one format, e.g. millimeters on X-axis
         x_peak *= 10
-        y_peak *= 10
+        logger.warning("Multiplying initial peak values by 10!")
 
-    # we want this to be in range <0; 1>
+    # we want values to be in range <0; 1>
     y_peak /= y_peak.max()
 
-    from scipy.signal import savgol_filter
-    # trying to smooth the noise, this window worked well on dataset with 3500 points
-    # (100 points per millimeter) probably it should be calculated based on input
-    y_peak = savgol_filter(y_peak, 31, 3)
+    # todo: dumping data for debug etc. remove later
+    # dump_data_to_file(x_peak, y_peak, 'cydos_new.csv')
+
+    if input_args.smooth:
+        from scipy.signal import savgol_filter
+        # trying to smooth the noise, this window worked well on dataset with 3500 points
+        # (100 points per millimeter) probably it should be calculated based on input
+        y_peak = savgol_filter(y_peak, 5, 3)
 
     testing_peak = BraggPeak(x_peak, y_peak)
     testing_domain = np.arange(0, 30, 0.001)
 
-    # for debugging, will be removed later
-    import matplotlib.pyplot as plt
-    plt.plot(testing_domain, testing_peak.evaluate(testing_domain))
-    plt.show()
+    # todo: for debugging, will be removed later
+    # import matplotlib.pyplot as plt
+    # plt.plot(testing_domain, testing_peak.evaluate(testing_domain))
+    # plt.show()
 
     if input_args.full == 'both':
         desired_range = testing_peak.range(testing_domain)
@@ -113,10 +120,11 @@ def basic_optimization(input_args):
                                                                    domain=testing_domain,
                                                                    spread=desired_modulation)
 
-    # in most cases this gives better results
-    # todo: make this a parameter
-    number_of_peaks += 1
-    logger.info("Got %s peaks from Gottschalk rule calculation." % number_of_peaks)
+    logger.info("Got {0} peaks from Gottschalk rule calculation.".format(number_of_peaks))
+    if input_args.add_to_gott:
+        number_of_peaks += input_args.add_to_gott
+        logger.info("Added {0} peaks to Gottschalk's rule calculation result. Now it is {1} peaks total.".format(
+                    input_args.add_to_gott, number_of_peaks))
 
     # use Gottschalk Rule result to generate list of input peaks
     inp_peaks = [BraggPeak(x_peak, y_peak) for _ in range(number_of_peaks)]

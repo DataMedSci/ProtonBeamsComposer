@@ -112,7 +112,7 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
 
     if save_plot and plot_path:
         try:
-            logger.info("Saving SOBP plot as {0}".format(plot_path))
+            logger.info("Saving SOBP plateau plot as {0}".format(plot_path))
             plt.savefig(plot_path)
         except ValueError as e:
             logger.error("Error occurred while saving SOBP plot!\n{0}".format(e))
@@ -131,7 +131,7 @@ def make_plots_from_file(file_path, delimeter=';', plottype=None, save_path=None
         # todo: for now just return standard plot
         plt.plot(x_peak, y_peak)
     elif plottype == "plateau":
-        beginning = x_peak[0]
+        beginning = np.floor(x_peak[0])
         ending = x_peak[-1]
 
         # horizontal helper lines

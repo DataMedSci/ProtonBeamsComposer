@@ -181,7 +181,7 @@ class SOBP(object):
         left_idx, right_idx = self._section_bounds_idx(domain, left_threshold, right_threshold)
         return domain[right_idx] - domain[left_idx]
 
-    def _flat_plateau_factor_helper(self, target_val=1.0):  # , spread, end, target_val=1.0):
+    def _flat_plateau_factor_helper(self, target_val=1.0):
         """
         Helper function for optimization - calculate how flat is SOBP plateau
         using square of differences between plateau points and target
@@ -210,7 +210,7 @@ class SOBP(object):
             raise ValueError("Length check failed for data to unpack...")
         for idx, peak in enumerate(self.component_peaks):
             peak.weight = data_to_unpack[idx]
-        plateau_factor = self._flat_plateau_factor_helper()  # (spread=target_modulation, end=target_range)
+        plateau_factor = self._flat_plateau_factor_helper()
         return plateau_factor ** 2
 
     def optimize_modulation(self, target_modulation, target_range=None, optimization_options=None):
@@ -223,20 +223,21 @@ class SOBP(object):
         :param optimization_options: option dict passed to scipy.optimization function
         :return:
         """
+        options = {
+            # 'disp': True,
+            'eps': 1e-8,  # If jac is approximated, use this value for the step size.
+            'ftol': 1e-12,
+            'gtol': 1e-12,  # Gradient norm must be less than gtol before successful termination.
+            'maxls': 40,
+            'maxfun': 30000,
+            'maxiter': 15000,
+            'maxcor': 40,
+        }
+
+        # if external options are specified - overwrite default
         if optimization_options:
-            options = optimization_options
-        else:
-            options = {
-                'disp': True,
-                'eps': 1e-8,  # If jac is approximated, use this value for the step size.
-                'ftol': 1e-12,
-                'gtol': 1e-12,  # Gradient norm must be less than gtol before successful termination.
-                'maxls': 40,
-                'maxfun': 30000,
-                'maxiter': 15000,
-                'maxcor': 40,
-                # 'factr': 10.0,
-            }
+            for option_name, option_value in optimization_options.iteritems():
+                options[option_name] = option_value
 
         initial_weights = []
         bound_list = []
