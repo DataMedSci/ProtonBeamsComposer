@@ -12,20 +12,37 @@ From main directory execute line below to generate a SOBP with range 15.0mm and 
 $ python run.py --range 15 --spread 15 --verbose 
 ```
 
-Another example generating full range and full spread without plots, but with verbose logging:
+Full range and full spread without plots, but with verbose logging:
 
 ```
 $ python run.py -r 1 -s 1 -vnf both
 ```
 
-### Available parameters
+Use external file with BP data `data\cydos1.dat` and generate a range 25.0 mm and spread 11.0 mm SOBP with quiet plotting.
 
 ```
+$ python run.py -i data\cydos1.dat -r 25 -s 11 -n
+```
+
+### Available parameters for `run.py`
+
+```
+Required:
 -s, --spread [float]
 -r, --range [float]
+
+Advanced:
 -f, --full ['range', 'spread', 'both']
--v, --verbose (DEBUG logging mode)
--q, --quiet (do not print anythink below WARNING level)
 -p, --halfmod (use half range as modulation value)
+    --smooth (use Savgol filter to smooth input data)
+    --window [int, odd] (specify window used by Savgol filter)
+-g, --add_to_gott [int] (if specified, add this number of peaks to calculated with Gottschalk rule, can be negative)
+-k, --peaks [int] (number of peaks in optimization - omits calculation using Gottschalk rule)
+-i, --input_bp_file [str] (file with BP data - first two columns should contain domain and values respectively)
+-d, --delimiter [str] (delimiter used in BP file)
+
+Logging etc.:
+-v, --verbose (DEBUG logging level)
+-q, --quiet (do not print anything below WARNING level)
 -n, --no-plot (disable showing most of the plots)
 ```
