@@ -5,7 +5,7 @@ import numpy as np
 import scipy.optimize
 
 from pbc.bragg_peak import BraggPeak
-from pbc.helpers import argmin_with_condition, dump_data_to_file
+from pbc.helpers import argmin_with_condition, dump_data_to_file, diff_max_from_range_90
 
 logger = logging.getLogger(__name__)
 
@@ -190,20 +190,15 @@ class SOBP(object):
         plateau = self.overall_sum(self._plateau_domain_for_optimization)
         # iterate over plateau points and calculate diff from target
         return sum([abs(target_val - pp) for pp in plateau])
-        # diff = sum([(target_val - pp)**2 for pp in plateau])
-        # grad = -2 * sum()
-        # return diff
 
-    def _optimization_helper(self, data_to_unpack, target_modulation, target_range):
+    def _optimization_helper(self, data_to_unpack):  # , target_modulation, target_range):
         """
         Helper function for scipy.optimize - should calculate modulation
         and plateau factor (how flat is SOBP plateau between two points:
             - target_range
             - target_range - target_modulation
 
-        :param data_to_unpack: data from scipy.optimize
-        :param target_modulation:
-        :param target_range: if not given, use the furthest peak position in SOBP
+        :param data_to_unpack: data from scipy.optimize (list of peak weights)
         :return:
         """
         if len(data_to_unpack) != len(self.component_peaks):
@@ -213,7 +208,7 @@ class SOBP(object):
         plateau_factor = self._flat_plateau_factor_helper()
         return plateau_factor ** 2
 
-    def optimize_modulation(self, target_modulation, target_range=None, optimization_options=None):
+    def optimize_sobp(self, target_modulation, target_range, optimization_options=None):
         """
         Optimise weights of peaks in SOBP object. This function does not
         move peaks from original position, it only manipulates their weights.
@@ -241,7 +236,6 @@ class SOBP(object):
 
         initial_weights = []
         bound_list = []
-        furthest_range = 0.0
         # weight for BP has to be 0 >= weight >=1 and optimization
         # shifts weight by eps, so to prevent ValueErrors from BraggPeak.weight
         # make the bounds smaller by eps
@@ -251,18 +245,18 @@ class SOBP(object):
         for peak in self.component_peaks:
             initial_weights.append(peak.weight)
             bound_list.append((lower_bound, upper_bound))
-            if peak.position > furthest_range:
-                furthest_range = peak.position
-
-        if target_range is None:
-            target_range = furthest_range
 
         initial_weights = np.array(initial_weights)
-        self._plateau_domain_for_optimization = np.arange(target_range - target_modulation, target_range, 0.1)
+
+        # cut plateau domain a bit from right to exclude the drop to 0.9 'range'
+        cut_from_right = diff_max_from_range_90(self.component_peaks[-1], norm=True)
+        self._plateau_domain_for_optimization = np.arange(start=target_range - target_modulation,
+                                                          stop=target_range - cut_from_right,
+                                                          step=0.01)
 
         res = scipy.optimize.minimize(self._optimization_helper,
                                       x0=initial_weights,
-                                      args=(target_modulation, target_range),
+                                      # args=(target_modulation, target_range),
                                       bounds=bound_list,
                                       method='L-BFGS-B',
                                       options=options)
