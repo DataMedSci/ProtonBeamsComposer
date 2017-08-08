@@ -117,20 +117,25 @@ def basic_optimization(input_args):
     if input_args.halfmod:
         desired_modulation = desired_range / 2
 
-    number_of_peaks = calculate_number_of_peaks_gottschalk_80_rule(peak_to_measure=testing_peak,
-                                                                   domain=testing_domain,
-                                                                   spread=desired_modulation)
+    if input_args.peaks:
+        number_of_peaks = input_args.peaks
+        logger.info("Using {0} as number of peaks in optimization.".format(input_args.peaks))
+    else:
+        number_of_peaks = calculate_number_of_peaks_gottschalk_80_rule(peak_to_measure=testing_peak,
+                                                                       domain=testing_domain,
+                                                                       spread=desired_modulation)
 
-    logger.info("Got {0} peaks from Gottschalk rule calculation.".format(number_of_peaks))
-    if input_args.add_to_gott:
-        number_of_peaks += input_args.add_to_gott
-        logger.info("Added {0} peak(s) to Gottschalk's rule calculation result. Now it is {1} peaks total.".format(
-                    input_args.add_to_gott, number_of_peaks))
+        logger.info("Got {0} peaks from Gottschalk rule calculation.".format(number_of_peaks))
 
-    # use Gottschalk Rule result to generate list of input peaks
+        if input_args.add_to_gott:
+            number_of_peaks += input_args.add_to_gott
+            logger.info("Added {0} peak(s) to Gottschalk's rule calculation result. Now it is {1} peaks total.".format(
+                        input_args.add_to_gott, number_of_peaks))
+
+    # generate list of input peaks
     inp_peaks = [BraggPeak(x_peak, y_peak) for _ in range(number_of_peaks)]
 
-    # base positions of peaks on GR result, range and desired modulation
+    # base positions of peaks, range and desired modulation
     base_position = desired_range - desired_modulation
 
     push_first_peak = diff_max_from_left_99(inp_peaks[-1])
