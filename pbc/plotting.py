@@ -41,6 +41,13 @@ def plot_sobp(start, stop, sobp_object, target_modulation=None, target_range=Non
 
     plt.plot(plot_domain, sobp_vals, color='red')
 
+    # plot all peaks contained in SOBP
+    for single_peak in sobp_object.component_peaks:
+        tmp_vals = single_peak.evaluate(plot_domain)
+        plt.plot(plot_domain, tmp_vals, color='blue')
+        # plot blue point on top of each peak
+        plt.plot(plot_domain[tmp_vals.argmax()], tmp_vals.max(), 'bo')
+
     if save_plot and plot_path:
         try:
             logger.info("Saving SOBP plot as {0}".format(plot_path))
