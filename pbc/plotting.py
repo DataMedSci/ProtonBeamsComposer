@@ -89,32 +89,32 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
     extended_plateau_domain = np.arange(beginning - 1.0, ending + 1.0, step)
     extended_plateau_vals = sobp_object.overall_sum(extended_plateau_domain)
 
-    # horizontal helper lines
     if helper_lines:
+        # horizontal helper lines
         # plt.plot([beginning - 1.0, ending + 1.0], [0.98, 0.98], color='orange')
         plt.plot([beginning - 1.0, ending + 1.0], [0.99, 0.99], color='green')
         plt.plot([beginning - 1.0, ending + 1.0], [1, 1], color='blue')
         plt.plot([beginning - 1.0, ending + 1.0], [1.01, 1.01], color='green')
         # plt.plot([beginning - 1.0, ending + 1.0], [1.02, 1.02], color='orange')
         # vertical helper lines
-        plt.plot([beginning, beginning], [0.94, 1.04], color='purple', label='begin = %s' % beginning)
-        plt.plot([ending, ending], [0.96, 1.04], color='blue', label='end = %s' % ending)
+        plt.plot([beginning, beginning], [0.94, 1.04], color='red', label='begin = %s' % beginning)
+        plt.plot([ending, ending], [0.96, 1.04], color='orange', label='end = %s' % ending)
     # result plateau
-    plt.plot(extended_plateau_domain, extended_plateau_vals, label='extended plateau', color='red')
-    plt.plot(plateau_domain, plateau, label='sum', color='black')
+    # plt.plot(extended_plateau_domain, extended_plateau_vals, label='extended plateau', color='red')
+    plt.plot(plateau_domain, plateau, label='plateau', color='black')
     plt.title("Modulation: {0:.3f}, Range: {1:.3f}, Plateau-factor: {2:.4f}"
               .format(mod, ran, plateau_factor))
 
     # limit axes
     axes = plt.gca()
-    axes.set_xlim([beginning - 1.0, ending + 1.0])
+    axes.set_xlim([np.floor(beginning), ending + 1.0])
     axes.set_ylim([0.9875, 1.0125])
     # extract labels and create legend
     handles, labels = axes.get_legend_handles_labels()
     axes.legend(handles, labels)
 
     # set some denser labels on axis
-    plt.xticks(np.arange(beginning - 1.0, ending + 1.1, 1))
+    plt.xticks(np.arange(np.floor(beginning), ending + 1.1, 1))
     plt.yticks(np.arange(0.9875, 1.0125, 0.0025))
 
     if save_plot and plot_path:
@@ -131,11 +131,15 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
         plt.show()
 
 
-def make_plots_from_file(file_path, delimiter=';', plottype=None, save_path=None):
+def make_plots_from_file(file_path, delimiter=';', plottype=None, save_path=None, second_file=None,
+                         second_file_delimiter=';'):
     x_peak, y_peak = load_data_from_dump(file_path, delimiter)
+    if second_file:
+        x_peak2, y_peak2 = load_data_from_dump(second_file, second_file_delimiter)
 
     if plottype == "sobp":
-        # todo: for now just return standard plot
+        # todo: for now just return standard plot, another external file with
+        # bp and positions and weights may be required
         plt.plot(x_peak, y_peak)
     elif plottype == "plateau":
         beginning = np.floor(x_peak[0])
@@ -149,7 +153,9 @@ def make_plots_from_file(file_path, delimiter=';', plottype=None, save_path=None
         plt.plot([beginning - 1.0, ending + 1.0], [1.02, 1.02], color='orange')
 
         # main plot
-        plt.plot(x_peak, y_peak, 'r')
+        plt.plot(x_peak, y_peak, 'r', label='First plot')
+        if second_file:
+            plt.plot(x_peak2, y_peak2, 'bx', label='Second plot')
 
         axes = plt.gca()
         axes.set_xlim([beginning - 1.0, ending + 1.0])
@@ -159,7 +165,13 @@ def make_plots_from_file(file_path, delimiter=';', plottype=None, save_path=None
         plt.xticks(np.arange(beginning - 1.0, ending + 1.1, 1))
         plt.yticks(np.arange(0.97, 1.03, 0.005))
     else:
-        plt.plot(x_peak, y_peak)
+        plt.plot(x_peak, y_peak, 'r-', label='First plot')
+        if second_file:
+            plt.plot(x_peak2, y_peak2, 'bx', label='Second plot')
+
+    axes = plt.gca()
+    handles, labels = axes.get_legend_handles_labels()
+    axes.legend(handles, labels)
 
     if save_path:
         plt.savefig(save_path)
