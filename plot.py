@@ -8,7 +8,7 @@ from pbc.plotting import make_plots_from_file
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('file', type=str, help="Path to data file that should be used in plotting")
-    parser.add_argument('-d', '--delimeter', type=str, help="Delimeter used in file")
+    parser.add_argument('-d', '--delimiter', type=str, help="Delimiter used in file")
     parser.add_argument('-p', '--plottype', type=str, choices=['sobp', 'plateau', 'none'], default='none')
     parser.add_argument('-s', '--savepath', type=str, help="If specified, used as path for saving the plot")
     parser.add_argument('-v', '--verbose', action='store_true')
@@ -27,6 +27,6 @@ if __name__ == '__main__':
                         level=log_level)
 
     make_plots_from_file(file_path=input_args.file,
-                         delimeter=input_args.delimeter,
+                         delimiter=input_args.delimiter,
                          plottype=input_args.plottype,
                          save_path=input_args.savepath)

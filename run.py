@@ -15,6 +15,7 @@ if __name__ == '__main__':
 
     # advanced
     parser.add_argument('--smooth', action='store_true')
+    parser.add_argument('--window', type=int, help="smooth window")
     parser.add_argument('-g', '--add_to_gott', type=int, help='if specified, add this number of peaks to calculated '
                                                               'with Gottschalk rule')
 

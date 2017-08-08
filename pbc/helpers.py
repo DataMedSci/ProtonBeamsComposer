@@ -39,16 +39,21 @@ def dump_data_to_file(domain, values, file_name):
         np.savetxt(dump_file, temp, delimiter=";", fmt='%.18f', newline='\n')
 
 
-def load_data_from_dump(file_name, delimeter=';'):
+def load_data_from_dump(file_name, delimiter=';'):
     with open(file=file_name, mode='r') as dump_file:
-        x, y = np.loadtxt(dump_file, delimiter=delimeter, usecols=(0, 1), unpack=True)
+        x, y = np.loadtxt(dump_file, delimiter=delimiter, usecols=(0, 1), unpack=True)
     return x, y
 
 
-def diff_max_from_range_90(peak):
+def diff_max_from_range_90(peak, norm=False):
     pos = peak.position
     tmp_dom = np.arange(pos, pos + 2, 0.0001)
-    ran = peak.range(tmp_dom, val=0.900)
+    if norm:
+        peak_cp = copy(peak)
+        peak_cp.weight = 1.0
+        ran = peak_cp.range(tmp_dom, val=0.900)
+    else:
+        ran = peak.range(tmp_dom, val=0.900)
     return ran - pos
 
 

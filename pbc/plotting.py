@@ -77,7 +77,7 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
     ending = target_range
     plateau_domain = np.arange(beginning, ending, step)
     plateau = sobp_object.overall_sum(plateau_domain)
-    plateau_factor = sum([abs(pp - 1.0) for pp in plateau])
+    plateau_factor = sobp_object._flat_plateau_factor_helper()
 
     extended_plateau_domain = np.arange(beginning - 1.0, ending + 1.0, step)
     extended_plateau_vals = sobp_object.overall_sum(extended_plateau_domain)
@@ -124,8 +124,8 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
         plt.show()
 
 
-def make_plots_from_file(file_path, delimeter=';', plottype=None, save_path=None):
-    x_peak, y_peak = load_data_from_dump(file_path, delimeter)
+def make_plots_from_file(file_path, delimiter=';', plottype=None, save_path=None):
+    x_peak, y_peak = load_data_from_dump(file_path, delimiter)
 
     if plottype == "sobp":
         # todo: for now just return standard plot

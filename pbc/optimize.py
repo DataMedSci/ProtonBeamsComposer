@@ -31,7 +31,7 @@ def optimization_wrapper(input_peaks, target_modulation, target_range, disable_p
                   display_plot=True)
 
     time_st = time.time()
-    res = test_sobp.optimize_modulation(target_modulation=target_modulation, target_range=target_range)
+    res = test_sobp.optimize_sobp(target_modulation=target_modulation, target_range=target_range)
     logger.info("Optimization function took {0:.2f} seconds".format(time.time() - time_st))
 
     logger.info("Optimization output:\n{0}".format(res))
@@ -91,9 +91,10 @@ def basic_optimization(input_args):
 
     if input_args.smooth:
         from scipy.signal import savgol_filter
-        # trying to smooth the noise, this window worked well on dataset with 3500 points
-        # (100 points per millimeter) probably it should be calculated based on input
-        y_peak = savgol_filter(y_peak, 5, 3)
+        if input_args.window:
+            y_peak = savgol_filter(y_peak, window_length=input_args.window, polyorder=3)
+        else:
+            y_peak = savgol_filter(y_peak, window_length=5, polyorder=3)
 
     testing_peak = BraggPeak(x_peak, y_peak)
     testing_domain = np.arange(0, 30, 0.001)
@@ -123,7 +124,7 @@ def basic_optimization(input_args):
     logger.info("Got {0} peaks from Gottschalk rule calculation.".format(number_of_peaks))
     if input_args.add_to_gott:
         number_of_peaks += input_args.add_to_gott
-        logger.info("Added {0} peaks to Gottschalk's rule calculation result. Now it is {1} peaks total.".format(
+        logger.info("Added {0} peak(s) to Gottschalk's rule calculation result. Now it is {1} peaks total.".format(
                     input_args.add_to_gott, number_of_peaks))
 
     # use Gottschalk Rule result to generate list of input peaks
