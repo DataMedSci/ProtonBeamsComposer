@@ -171,7 +171,7 @@ def basic_optimization(input_args):
                  plot_path='plateau.png')
 
     # calculate difference between desired range and actual SOBP range we got from optimization
-    right_error = (desired_range - right_res) * 1.2
+    right_error = (desired_range - right_res)
 
     corrected_starting_positions = np.linspace(start=begin, stop=end + right_error, num=number_of_peaks)
 

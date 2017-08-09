@@ -54,6 +54,6 @@ def diff_max_from_left_99(peak):
 
 
 def make_precise_end_calculations(sobp_object):
-    prec_dom = np.arange(-2, 30, 0.0001)
-    ll, rr = sobp_object._section_bounds_idx(domain=prec_dom, threshold=0.99, threshold_right=0.90)
-    return prec_dom[ll], prec_dom[rr]
+    precise_dom = np.arange(-2, 30, 0.0001)
+    ll, rr = sobp_object.section_bounds(domain=precise_dom, threshold=0.990, threshold_right=0.900)
+    return ll, rr

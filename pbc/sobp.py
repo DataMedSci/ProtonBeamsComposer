@@ -5,7 +5,7 @@ import numpy as np
 import scipy.optimize
 
 from pbc.bragg_peak import BraggPeak
-from pbc.helpers import argmin_with_condition, dump_data_to_file, diff_max_from_range_90
+from pbc.helpers import dump_data_to_file, diff_max_from_range_90
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +82,7 @@ class SOBP(object):
         else:
             raise ValueError("No domain specified (argument/default)!")
 
-    def _section_bounds_idx(self, domain=None, threshold=0.9, threshold_right=0.9):
+    def section_bounds(self, domain=None, threshold=0.9, threshold_right=0.9):
         """
         Helper function.
 
@@ -130,13 +130,14 @@ class SOBP(object):
         else:
             # default split based on position of max in SOBP
             # to ensure getting 2 different points
-            merge_idx = val_arr.argmax()
-            left = val_arr[:merge_idx]
-            right = val_arr[merge_idx:]
-        # find idx of desired val in calculated partitions
-        idx_left = argmin_with_condition(left, threshold)
-        idx_right = argmin_with_condition(right, threshold_right)
-        return idx_left, len(left) + gap_between + idx_right
+            left_merge_idx = val_arr.argmax()
+            right_merge_idx = left_merge_idx
+            left = val_arr[:left_merge_idx]
+            right = val_arr[right_merge_idx:]
+        # find desired val in calculated partitions using interpolation
+        proximal = np.interp([threshold], left[::], domain[:left_merge_idx:])
+        distal = np.interp([threshold_right], right[::-1], np.flip(domain[right_merge_idx::], 0))
+        return proximal[0], distal[0]
 
     @property
     def def_domain(self):
@@ -167,19 +168,19 @@ class SOBP(object):
 
     def fwhm(self, domain=None):
         """Full width at half maximum"""
-        return self.modulation(domain, left_threshold=0.5)
+        return self.modulation(domain, left_threshold=0.5, right_threshold=0.5)
 
     def range(self, val=0.9, domain=None):
         """Return range of SOBP using given domain at the furthest end"""
         domain = self._has_defined_domain(domain)
-        _, right_idx = self._section_bounds_idx(domain, val)
-        return domain[right_idx]
+        _, distal = self.section_bounds(domain=domain, threshold=val)
+        return distal
 
     def modulation(self, domain=None, left_threshold=0.99, right_threshold=0.9):
         """Calculate modulation using given thresholds"""
         domain = self._has_defined_domain(domain)
-        left_idx, right_idx = self._section_bounds_idx(domain, left_threshold, right_threshold)
-        return domain[right_idx] - domain[left_idx]
+        proximal, distal = self.section_bounds(domain=domain, threshold=left_threshold, threshold_right=right_threshold)
+        return distal - proximal
 
     def _flat_plateau_factor_helper(self, target_val=1.0):
         """
@@ -311,13 +312,9 @@ if __name__ == '__main__':
 
     t = 0.75
     t2 = 0.6
-    ll, rr = test_sobp._section_bounds_idx(threshold=t, threshold_right=t2)
+    ll, rr = test_sobp.section_bounds(threshold=t, threshold_right=t2)
     print(ll, rr)
-    print(test_domain[ll])
-    print(test_domain[rr])
-    print(sobp_vals[ll], sobp_vals[rr])
-    ll = test_domain[ll]
-    rr = test_domain[rr]
+
     plt.plot([ll, ll], [0, mx], color='yellow')
     plt.plot([rr, rr], [0, mx], color='orange')
     plt.plot([start, stop], [t, t], color='yellow', label=str(t) + "; left (val=%s)" % ll)
@@ -334,8 +331,7 @@ if __name__ == '__main__':
     for p in inp_peaks:
         plt.plot(test_domain, p.evaluate(test_domain), label=p.position)
     plt.legend()
-    plt.title("FWHM: {0:.2f}, range: {1:.2f}, modulation: {2:.2f} (l_threshold:{3:.2f},r_threshold:{4:.2f})"
-              .format(tmp_fwhm, tmp_range, tmp_modulation, t, t2))
-    # plt.show()
+    plt.title("FWHM: {0:.2f}, range: {1:.2f}, modulation: {2:.2f}".format(tmp_fwhm, tmp_range, tmp_modulation))
+    plt.show()
 
-    dump_data_to_file(test_domain, sobp_vals, 'test.csv')
+    # dump_data_to_file(test_domain, sobp_vals, 'test.csv')
