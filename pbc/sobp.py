@@ -171,10 +171,16 @@ class SOBP(object):
         return self.modulation(domain, left_threshold=0.5, right_threshold=0.5)
 
     def range(self, val=0.9, domain=None):
-        """Return range of SOBP using given domain at the furthest end"""
+        """Return distal-range of SOBP (at the furthest end)"""
         domain = self._has_defined_domain(domain)
         _, distal = self.section_bounds(domain=domain, threshold=val)
         return distal
+
+    def proximal_range(self, val=0.99, domain=None):
+        """Return proximal-range of SOBP"""
+        domain = self._has_defined_domain(domain)
+        proximal, _ = self.section_bounds(domain=domain, threshold=val)
+        return proximal
 
     def modulation(self, domain=None, left_threshold=0.99, right_threshold=0.9):
         """Calculate modulation using given thresholds"""
@@ -268,8 +274,8 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import pandas as pd
 
-    with open(join("..", "data", "bp.csv"), 'r') as bp_file:
-        data = pd.read_csv(bp_file, sep=';')
+    with open(join("..", "data", "cydos1.dat"), 'r') as bp_file:
+        data = pd.read_csv(bp_file, sep=' ')
 
     x_peak = data[data.columns[0]].as_matrix()
     y_peak = data[data.columns[1]].as_matrix()

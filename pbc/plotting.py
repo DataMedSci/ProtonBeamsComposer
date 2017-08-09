@@ -63,7 +63,7 @@ def plot_sobp(start, stop, sobp_object, target_modulation=None, target_range=Non
 
 
 def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper_lines=True, save_plot=False,
-                 plot_path=None, display_plot=True, dump_data=False, dump_path=''):
+                 plot_path=None, display_plot=True, dump_data=False, dump_path='', higher=True):
     """
     Plot SOBP plateau
 
@@ -77,12 +77,14 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
     :param display_plot: if True - displays a standard window with plot
     :param dump_data:
     :param dump_path:
+    :param higher: make bigger bounds on vertical axis
     """
     mod = sobp_object.modulation()
     ran = sobp_object.range()
+    prox = sobp_object.proximal_range(val=0.990)
     beginning = target_range - target_modulation
     ending = target_range
-    plateau_domain = np.arange(beginning, ending, step)
+    plateau_domain = np.arange(beginning - 1.0, ending + 1.0, step)
     plateau = sobp_object.overall_sum(plateau_domain)
     plateau_factor = sobp_object._flat_plateau_factor_helper()
 
@@ -91,31 +93,37 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
 
     if helper_lines:
         # horizontal helper lines
-        # plt.plot([beginning - 1.0, ending + 1.0], [0.98, 0.98], color='orange')
+        plt.plot([beginning - 1.0, ending + 1.0], [0.98, 0.98], color='orange')
         plt.plot([beginning - 1.0, ending + 1.0], [0.99, 0.99], color='green')
         plt.plot([beginning - 1.0, ending + 1.0], [1, 1], color='blue')
         plt.plot([beginning - 1.0, ending + 1.0], [1.01, 1.01], color='green')
-        # plt.plot([beginning - 1.0, ending + 1.0], [1.02, 1.02], color='orange')
+        plt.plot([beginning - 1.0, ending + 1.0], [1.02, 1.02], color='orange')
         # vertical helper lines
-        plt.plot([beginning, beginning], [0.94, 1.04], color='red', label='begin = %s' % beginning)
-        plt.plot([ending, ending], [0.96, 1.04], color='orange', label='end = %s' % ending)
+        plt.plot([beginning, beginning], [0.88, 1.025], color='red', label='start = %s' % beginning)
+        plt.plot([ending, ending], [0.88, 1.025], color='magenta', label='end = %s' % ending)
+        # 99-90 points
+        plt.plot(prox, 0.99, 'ro', label='proximal')
+        plt.plot(ran, 0.90, 'co', label='distal')
+
     # result plateau
-    # plt.plot(extended_plateau_domain, extended_plateau_vals, label='extended plateau', color='red')
-    plt.plot(plateau_domain, plateau, label='plateau', color='black')
-    plt.title("Modulation: {0:.3f}, Range: {1:.3f}, Plateau-factor: {2:.4f}"
+    plt.plot(plateau_domain, plateau, label='SOBP', color='black')
+    plt.title("Modulation (99-90): {0:.3f}, Distal (90): {1:.3f}, Plateau-factor: {2:.3f}"
               .format(mod, ran, plateau_factor))
 
-    # limit axes
+    # limit axes and set some denser labels/ticks
+    plt.xticks(np.arange(np.floor(beginning - 1.0), ending + 1.1, 1))
     axes = plt.gca()
-    axes.set_xlim([np.floor(beginning), ending + 1.0])
-    axes.set_ylim([0.9875, 1.0125])
+    axes.set_xlim([np.floor(beginning - 1.0), ending + 1.0])
+    if higher:
+        axes.set_ylim([0.88, 1.025])
+        plt.yticks(np.arange(0.88, 1.026, 0.005))
+    else:
+        axes.set_ylim([0.9875, 1.0125])
+        plt.yticks(np.arange(0.9875, 1.0125, 0.0025))
+
     # extract labels and create legend
     handles, labels = axes.get_legend_handles_labels()
     axes.legend(handles, labels)
-
-    # set some denser labels on axis
-    plt.xticks(np.arange(np.floor(beginning), ending + 1.1, 1))
-    plt.yticks(np.arange(0.9875, 1.0125, 0.0025))
 
     if save_plot and plot_path:
         try:
@@ -124,8 +132,11 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
         except ValueError as e:
             logger.error("Error occurred while saving SOBP plot!\n{0}".format(e))
 
-    if dump_data and dump_path:
-        dump_data_to_file(extended_plateau_domain, extended_plateau_vals, file_name=dump_path)
+    if dump_path:
+        try:
+            dump_data_to_file(extended_plateau_domain, extended_plateau_vals, file_name=dump_path)
+        except:
+            logger.error("Invalid path given!")
 
     if display_plot:
         plt.show()

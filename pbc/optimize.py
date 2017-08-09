@@ -86,9 +86,6 @@ def basic_optimization(input_args):
     # we want values to be in range <0; 1>
     y_peak /= y_peak.max()
 
-    # todo: dumping data for debug etc. remove later
-    # dump_data_to_file(x_peak, y_peak, 'cydos_new.csv')
-
     if input_args.smooth:
         from scipy.signal import savgol_filter
         if input_args.window:
@@ -97,12 +94,6 @@ def basic_optimization(input_args):
             y_peak = savgol_filter(y_peak, window_length=5, polyorder=3)
 
     testing_peak = BraggPeak(x_peak, y_peak)
-    testing_domain = np.arange(0, 30, 0.001)
-
-    # todo: for debugging, will be removed later
-    # import matplotlib.pyplot as plt
-    # plt.plot(testing_domain, testing_peak.evaluate(testing_domain))
-    # plt.show()
 
     if input_args.full == 'both':
         desired_range = testing_peak.range(val=0.90)
@@ -162,18 +153,19 @@ def basic_optimization(input_args):
     logger.info("\n\tPosition of 0.9 from right {0}\n\tTarget val was: {1}\n\tDiff of right vals: {2}".format(
                 right_res, desired_range, abs(desired_range - right_res)))
 
+    # calculate difference between desired range and actual SOBP range we got from optimization
+    right_error = (desired_range - right_res)
+    logger.info("Right error after first optimization is: {0}".format(right_error))
+
+    corrected_starting_positions = np.linspace(start=begin, stop=end + right_error, num=number_of_peaks)
+
     plot_plateau(sobp_object=res_sobp_object,
                  target_modulation=desired_modulation,
-                 target_range=desired_range - pull_back_last_peak,
+                 target_range=desired_range,
                  dump_data=True,
                  dump_path='plateau.csv',
                  save_plot=True,
                  plot_path='plateau.png')
-
-    # calculate difference between desired range and actual SOBP range we got from optimization
-    right_error = (desired_range - right_res)
-
-    corrected_starting_positions = np.linspace(start=begin, stop=end + right_error, num=number_of_peaks)
 
     for idx, peak in enumerate(inp_peaks):
         peak.position = corrected_starting_positions[idx]
@@ -198,7 +190,7 @@ def basic_optimization(input_args):
 
     plot_plateau(sobp_object=res_sobp_object,
                  target_modulation=desired_modulation,
-                 target_range=desired_range - pull_back_last_peak,
+                 target_range=desired_range,
                  dump_data=True,
                  dump_path='corrected_plateau.csv',
                  save_plot=True,
