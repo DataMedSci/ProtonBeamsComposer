@@ -249,7 +249,7 @@ class SOBP(object):
         initial_weights = np.array(initial_weights)
 
         # cut plateau domain a bit from right to exclude the drop to 0.9 'range'
-        cut_from_right = diff_max_from_range_90(self.component_peaks[-1], norm=True)
+        cut_from_right = diff_max_from_range_90(self.component_peaks[-1])
         self._plateau_domain_for_optimization = np.arange(start=target_range - target_modulation,
                                                           stop=target_range - cut_from_right,
                                                           step=0.01)

@@ -1,4 +1,5 @@
 import logging
+from copy import copy
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -87,23 +88,36 @@ class BraggPeak(object):
         idx_right = (np.abs(right - val)).argmin()
         return idx_left, merge_idx + idx_right
 
-    def range(self, domain, val=0.9):
+    def range(self, val=0.90, precision=0.001):
         """Return range at given value on the dropping/further side of BP"""
-        _, idx = self._calculate_idx_for_given_height_value(domain=domain, val=val)
-        return domain[idx]
+        pos = self.position
+        tmp_dom = np.arange(pos, pos + 2, precision)
+        peak_cp = copy(self)
+        peak_cp.weight = 1.0
+        ran = np.interp([val], peak_cp.evaluate(tmp_dom)[::-1], tmp_dom[::-1])
+        return ran[0]
 
-    def width_at(self, domain, val=0.8):
-        left_idx, right_idx = self._calculate_idx_for_given_height_value(domain=domain, val=val)
-        return domain[right_idx] - domain[left_idx]
+    def proximal_range(self, val=0.990, precision=0.001):
+        pos = self.position
+        tmp_dom = np.arange(pos - 2, pos, precision)
+        peak_cp = copy(self)
+        peak_cp.weight = 1.0
+        proximal = np.interp([val], peak_cp.evaluate(tmp_dom), tmp_dom)
+        return proximal[0]
+
+    def width_at(self, val=0.80, precision=0.001):
+        distal = self.range(val=val, precision=precision)
+        proximal = self.proximal_range(val=val, precision=precision)
+        return distal - proximal
 
 
 if __name__ == '__main__':
     from os.path import join
     import pandas as pd
     from beprof import profile
-    from scipy.signal import savgol_filter
 
     with open(join('..', 'data', 'cydos1.dat'), 'r') as bp_file:
+    # with open(join('..', 'data', '3500.dat'), 'r') as bp_file:
         data = pd.read_csv(bp_file, sep=' ')
 
     x_peak = data[data.columns[0]].dropna(axis=0, how='all')
@@ -112,8 +126,6 @@ if __name__ == '__main__':
     x_peak = x_peak.as_matrix()
     y_peak = y_peak.as_matrix()
 
-    y_peak = savgol_filter(y_peak, 31, 3)
-
     y_peak /= y_peak.max()
 
     a = BraggPeak(x_peak, y_peak)
@@ -121,10 +133,14 @@ if __name__ == '__main__':
     yy = np.vstack((x_peak, y_peak)).T
     prof = profile.Profile(yy)
 
-    print("left 99%", prof.x_at_y(0.99, reverse=False))
-    print("right 90%", prof.x_at_y(0.90, reverse=True))
+    print("left 99% bef", prof.x_at_y(0.99, reverse=False))
+    print("left 99% pbc", a.proximal_range(val=0.99))
+    print("right 90% bef", prof.x_at_y(0.90, reverse=True))
+    print("right 90% pbc", a.range(0.90))
+
+    print("wid new", a.width_at(val=0.80))
 
     # they should cover each other
-    plt.plot(prof.x, prof.y, 'r')
+    # plt.plot(prof.x, prof.y, 'r')
     plt.plot(x_peak, y_peak, 'b')
     plt.show()

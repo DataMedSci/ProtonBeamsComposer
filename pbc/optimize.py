@@ -105,10 +105,10 @@ def basic_optimization(input_args):
     # plt.show()
 
     if input_args.full == 'both':
-        desired_range = testing_peak.range(testing_domain)
+        desired_range = testing_peak.range(val=0.90)
         desired_modulation = desired_range
     elif input_args.full == 'range':
-        desired_range = testing_peak.range(testing_domain)
+        desired_range = testing_peak.range(val=0.90)
         desired_modulation = input_args.spread
     elif input_args.full == 'spread':
         desired_range = input_args.range
@@ -122,7 +122,6 @@ def basic_optimization(input_args):
         logger.info("Using {0} as number of peaks in optimization.".format(input_args.peaks))
     else:
         number_of_peaks = calculate_number_of_peaks_gottschalk_80_rule(peak_to_measure=testing_peak,
-                                                                       domain=testing_domain,
                                                                        spread=desired_modulation)
 
         logger.info("Got {0} peaks from Gottschalk rule calculation.".format(number_of_peaks))
@@ -172,10 +171,9 @@ def basic_optimization(input_args):
                  plot_path='plateau.png')
 
     # calculate difference between desired range and actual SOBP range we got from optimization
-    right_error = desired_range - right_res
+    right_error = (desired_range - right_res) * 1.2
 
-    # todo: analyze Gottschalk rule calculation (probably right_error * 1.2 factor comes from there...)
-    corrected_starting_positions = np.linspace(start=begin, stop=end + right_error * 1.2, num=number_of_peaks)
+    corrected_starting_positions = np.linspace(start=begin, stop=end + right_error, num=number_of_peaks)
 
     for idx, peak in enumerate(inp_peaks):
         peak.position = corrected_starting_positions[idx]

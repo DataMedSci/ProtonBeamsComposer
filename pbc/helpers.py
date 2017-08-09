@@ -1,16 +1,12 @@
-from copy import copy
-
 import numpy as np
 
 
-def calculate_number_of_peaks_gottschalk_80_rule(peak_to_measure, domain, spread):
+def calculate_number_of_peaks_gottschalk_80_rule(peak_to_measure, spread):
     """
     Calculate number of peaks optimal for SOBP optimization
     on given spread using Gottschalk 80% rule.
     """
-    temp_peak = copy(peak_to_measure)
-    temp_peak.weight = 1.0
-    width = temp_peak.width_at(domain=domain, val=0.8)
+    width = peak_to_measure.width_at(val=0.80)
     n_of_optimal_peaks = int(np.ceil(spread // width))
     return n_of_optimal_peaks + 1
 
@@ -45,24 +41,16 @@ def load_data_from_dump(file_name, delimiter=';'):
     return x, y
 
 
-def diff_max_from_range_90(peak, norm=False):
+def diff_max_from_range_90(peak):
     pos = peak.position
-    tmp_dom = np.arange(pos, pos + 2, 0.0001)
-    if norm:
-        peak_cp = copy(peak)
-        peak_cp.weight = 1.0
-        ran = peak_cp.range(tmp_dom, val=0.900)
-    else:
-        ran = peak.range(tmp_dom, val=0.900)
+    ran = peak.range(val=0.900)
     return ran - pos
 
 
 def diff_max_from_left_99(peak):
     pos = peak.position
-    tmp_dom = np.arange(pos - 1, pos + 1, 0.0001)
-    left_99_idx = peak._calculate_idx_for_given_height_value(tmp_dom, 0.990)[0]
-    left_99_val = tmp_dom[left_99_idx]
-    return abs(pos - left_99_val)
+    left_99 = peak.proximal_range(val=0.990)
+    return abs(pos - left_99)
 
 
 def make_precise_end_calculations(sobp_object):

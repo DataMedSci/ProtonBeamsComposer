@@ -6,7 +6,7 @@
 
 ### Example usage
 
-From main directory execute line below to generate a SOBP with range 15.0mm and 15.0mm spread.
+From the main directory execute line below to generate a SOBP with range 15.0 mm and 15.0 mm spread.
 
 ```
 $ python run.py --range 15 --spread 15 --verbose 
