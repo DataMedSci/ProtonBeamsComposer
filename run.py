@@ -38,7 +38,7 @@ if __name__ == '__main__':
     else:
         log_level = logging.INFO
 
-    logging.basicConfig(format='--> (%(asctime)s) [%(name)s] - %(levelname)s - %(message)s',
+    logging.basicConfig(format='--> (%(asctime)s) - %(levelname)s - [%(name)s.%(funcName)s:%(lineno)s]\n\t%(message)s',
                         datefmt='%H:%M:%S',
                         level=log_level)
 

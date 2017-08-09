@@ -36,9 +36,9 @@ Advanced:
 -p, --halfmod (use half range as modulation value)
     --smooth (use Savgol filter to smooth input data)
     --window [int, odd] (specify window used by Savgol filter)
--g, --add_to_gott [int] (if specified, add this number of peaks to calculated with Gottschalk rule, can be negative)
+-g, --add_to_gott [int] (add this number of peaks to calculated with Gottschalk rule, can be negative)
 -k, --peaks [int] (number of peaks in optimization - omits calculation using Gottschalk rule)
--i, --input_bp_file [str] (file with BP data - first two columns should contain domain and values respectively)
+-i, --input_bp_file [str] (file with BP data, first two columns should contain domain and values respectively)
 -d, --delimiter [str] (delimiter used in BP file)
 
 Logging etc.:
