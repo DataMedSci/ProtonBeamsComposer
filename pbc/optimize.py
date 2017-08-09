@@ -2,12 +2,11 @@ import time
 from os.path import join
 
 import logging
-import pandas as pd
 import numpy as np
 
 from pbc.bragg_peak import BraggPeak
 from pbc.helpers import calculate_number_of_peaks_gottschalk_80_rule, diff_max_from_left_99, diff_max_from_range_90, \
-    make_precise_end_calculations
+    make_precise_end_calculations, load_data_from_dump
 from pbc.plotting import plot_plateau, plot_sobp
 from pbc.sobp import SOBP
 
@@ -69,14 +68,9 @@ def basic_optimization(input_args):
     # this is some measured data generated using DataMedSci/pymchelper --plotdata
     # option and SHIELD-HIT12A simulation results
     if not input_args.input_bp_file:
-        with open(join('data', 'cydos_new.csv'), 'r') as bp_file:
-            data = pd.read_csv(bp_file, sep=';')
+        x_peak, y_peak = load_data_from_dump(file_name=join('data', 'cydos_new.csv'), delimiter=';')
     else:
-        with open(input_args.input_bp_file, 'r') as bp_file:
-            data = pd.read_csv(bp_file, sep=input_args.delimiter)
-
-    x_peak = data[data.columns[0]].as_matrix()
-    y_peak = data[data.columns[1]].as_matrix()
+        x_peak, y_peak = load_data_from_dump(file_name=input_args.input_bp_file, delimiter=input_args.delimeter)
 
     # if it is in centimeters convert to millimeters
     if x_peak.max() < 10:

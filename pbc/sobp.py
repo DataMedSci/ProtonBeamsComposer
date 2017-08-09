@@ -5,7 +5,7 @@ import numpy as np
 import scipy.optimize
 
 from pbc.bragg_peak import BraggPeak
-from pbc.helpers import dump_data_to_file, diff_max_from_range_90
+from pbc.helpers import diff_max_from_range_90
 
 logger = logging.getLogger(__name__)
 
@@ -272,13 +272,9 @@ class SOBP(object):
 if __name__ == '__main__':
     from os.path import join
     import matplotlib.pyplot as plt
-    import pandas as pd
+    from pbc.helpers import load_data_from_dump
 
-    with open(join("..", "data", "cydos1.dat"), 'r') as bp_file:
-        data = pd.read_csv(bp_file, sep=' ')
-
-    x_peak = data[data.columns[0]].as_matrix()
-    y_peak = data[data.columns[1]].as_matrix()
+    x_peak, y_peak = load_data_from_dump(file_name=join("..", "data", "cydos1.dat"), delimiter=' ')
 
     a = BraggPeak(x_peak, y_peak)
     a.position = 24.
@@ -339,5 +335,3 @@ if __name__ == '__main__':
     plt.legend()
     plt.title("FWHM: {0:.2f}, range: {1:.2f}, modulation: {2:.2f}".format(tmp_fwhm, tmp_range, tmp_modulation))
     plt.show()
-
-    # dump_data_to_file(test_domain, sobp_vals, 'test.csv')

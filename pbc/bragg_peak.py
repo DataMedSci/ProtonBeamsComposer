@@ -113,18 +113,11 @@ class BraggPeak(object):
 
 if __name__ == '__main__':
     from os.path import join
-    import pandas as pd
     from beprof import profile
+    from pbc.helpers import load_data_from_dump
 
-    with open(join('..', 'data', 'cydos1.dat'), 'r') as bp_file:
-    # with open(join('..', 'data', '3500.dat'), 'r') as bp_file:
-        data = pd.read_csv(bp_file, sep=' ')
-
-    x_peak = data[data.columns[0]].dropna(axis=0, how='all')
-    y_peak = data[data.columns[1]].dropna(axis=0, how='all')
-
-    x_peak = x_peak.as_matrix()
-    y_peak = y_peak.as_matrix()
+    x_peak, y_peak = load_data_from_dump(file_name=join('..', 'data', 'cydos1.dat'), delimiter=' ')
+    # x_peak, y_peak = load_data_from_dump(file_name=join('..', 'data', '3500.dat'), delimiter=' ')
 
     y_peak /= y_peak.max()
 

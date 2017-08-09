@@ -4,4 +4,3 @@ numpy ; python_version < '3.0' or python_version >= '3.4' # newest numpy for pyt
 scipy<0.18 ; python_version >= '3.2' and python_version < '3.4' # py 3.2 and 3.3
 scipy ; python_version < '3.0' or python_version >= '3.4'  # py different than 3.2 and 3.3
 matplotlib
-pandas
