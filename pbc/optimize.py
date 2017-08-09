@@ -51,7 +51,8 @@ def optimization_wrapper(input_peaks, target_modulation, target_range, disable_p
 
         plot_plateau(sobp_object=test_sobp,
                      target_modulation=target_modulation,
-                     target_range=target_range)
+                     target_range=target_range,
+                     higher=False)
 
     return test_sobp
 
@@ -142,21 +143,22 @@ def basic_optimization(input_args):
 
     left_res, right_res = make_precise_end_calculations(res_sobp_object)
 
-    logger.info("\n\tPosition of 0.99 from left is {0}\n\tTarget val was: {1}\n\tDiff of left vals: {2}".format(
+    logger.info("Position of 0.99 from left is {0}\n\tTarget val was: {1}\n\tDiff of left vals: {2}".format(
                 left_res, base_position, abs(base_position - left_res)))
-    logger.info("\n\tPosition of 0.9 from right {0}\n\tTarget val was: {1}\n\tDiff of right vals: {2}".format(
+    logger.info("Position of 0.9 from right {0}\n\tTarget val was: {1}\n\tDiff of right vals: {2}".format(
                 right_res, desired_range, abs(desired_range - right_res)))
 
-    # calculate difference between desired range and actual SOBP range we got from optimization
-    right_error = (desired_range - right_res)
-    logger.info("Right error after first optimization is: {0}".format(right_error))
+    # calculate difference between desired proximal/distal range and what we got from optimization
+    left_error = base_position - left_res
+    right_error = desired_range - right_res
+    logger.info("Left (99) error after first optimization is: {0}".format(left_error))
+    logger.info("Right (90) error after first optimization is: {0}".format(right_error))
 
-    corrected_starting_positions = np.linspace(start=begin, stop=end + right_error, num=number_of_peaks)
+    corrected_starting_positions = np.linspace(start=begin + left_error, stop=end + right_error, num=number_of_peaks)
 
     plot_plateau(sobp_object=res_sobp_object,
                  target_modulation=desired_modulation,
                  target_range=desired_range,
-                 dump_data=True,
                  dump_path='plateau.csv',
                  save_plot=True,
                  plot_path='plateau.png')
@@ -173,9 +175,9 @@ def basic_optimization(input_args):
 
     left_res, right_res = make_precise_end_calculations(res_sobp_object)
 
-    logger.info("\n\tPosition of 0.99 from left is {0}\n\tTarget val was: {1}\n\tDiff of left vals: {2}".format(
+    logger.info("Position of 0.99 from left is {0}\n\tTarget val was: {1}\n\tDiff of left vals: {2}".format(
                 left_res, base_position, abs(base_position - left_res)))
-    logger.info("\n\tPosition of 0.9 from right {0}\n\tTarget val was: {1}\n\tDiff of right vals: {2}".format(
+    logger.info("Position of 0.9 from right {0}\n\tTarget val was: {1}\n\tDiff of right vals: {2}".format(
                 right_res, desired_range, abs(desired_range - right_res)))
 
     new_right_error = abs(desired_range - right_res)
@@ -185,7 +187,6 @@ def basic_optimization(input_args):
     plot_plateau(sobp_object=res_sobp_object,
                  target_modulation=desired_modulation,
                  target_range=desired_range,
-                 dump_data=True,
                  dump_path='corrected_plateau.csv',
                  save_plot=True,
                  plot_path='corrected_plateau.png')

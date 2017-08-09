@@ -28,7 +28,7 @@ def plot_sobp(start, stop, sobp_object, target_modulation=None, target_range=Non
     """
     mod = sobp_object.modulation()
     ran = sobp_object.range()
-    plot_domain = np.arange(start, stop, step)
+    plot_domain = np.arange(start - 1.0, stop + 1.0, step)
     sobp_vals = sobp_object.overall_sum(plot_domain)
 
     if helper_lines:
@@ -44,9 +44,20 @@ def plot_sobp(start, stop, sobp_object, target_modulation=None, target_range=Non
     # plot all peaks contained in SOBP
     for single_peak in sobp_object.component_peaks:
         tmp_vals = single_peak.evaluate(plot_domain)
-        plt.plot(plot_domain, tmp_vals, color='blue')
+        plt.plot(plot_domain, tmp_vals, color='black')
         # plot blue point on top of each peak
         plt.plot(plot_domain[tmp_vals.argmax()], tmp_vals.max(), 'bo')
+
+    # limit axes and set some denser labels/ticks
+    plt.xticks(np.arange(0, plot_domain[-1], 1))
+    plt.yticks(np.arange(0, 1.11, 0.05))
+
+    fig = plt.gcf()
+    fig.set_size_inches(8, 6)
+
+    axes = plt.gca()
+    axes.set_xlim([plot_domain[0], plot_domain[-1]])
+    axes.set_ylim([0, 1.1])
 
     if save_plot and plot_path:
         try:
@@ -55,15 +66,20 @@ def plot_sobp(start, stop, sobp_object, target_modulation=None, target_range=Non
         except ValueError as e:
             logger.error("Error occurred while saving SOBP plot!\n{0}".format(e))
 
-    if dump_data and file_path:
-        dump_data_to_file(plot_domain, sobp_vals, file_name=file_path)
+    if file_path:
+        try:
+            dump_data_to_file(plot_domain, sobp_vals, file_name=file_path)
+        except:
+            logger.error("Invalid path given!")
 
     if display_plot:
         plt.show()
 
+    plt.clf()
+
 
 def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper_lines=True, save_plot=False,
-                 plot_path=None, display_plot=True, dump_data=False, dump_path='', higher=True):
+                 plot_path=None, display_plot=True, dump_path='', higher=True):
     """
     Plot SOBP plateau
 
@@ -75,7 +91,6 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
     :param save_plot: if True - will attempt to save plot to disk
     :param plot_path: path with extension where the plot will be saved, ignored when save_plot is False
     :param display_plot: if True - displays a standard window with plot
-    :param dump_data:
     :param dump_path:
     :param higher: make bigger bounds on vertical axis
     """
@@ -107,19 +122,22 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
 
     # result plateau
     plt.plot(plateau_domain, plateau, label='SOBP', color='black')
-    plt.title("Modulation (99-90): {0:.3f}, Distal (90): {1:.3f}, Plateau-factor: {2:.3f}"
-              .format(mod, ran, plateau_factor))
+    plt.title("Modulation (99-90): {0:.3f}, Proximal (99): {1:.3f}, Distal (90): {2:.3f}, Plt-fac: {3:.3f}"
+              .format(mod, prox, ran, plateau_factor))
+
+    fig = plt.gcf()
+    fig.set_size_inches(8, 6)
 
     # limit axes and set some denser labels/ticks
-    plt.xticks(np.arange(np.floor(beginning - 1.0), ending + 1.1, 1))
     axes = plt.gca()
     axes.set_xlim([np.floor(beginning - 1.0), ending + 1.0])
+    plt.xticks(np.arange(np.floor(beginning - 1.0), ending + 1.1, 1))
     if higher:
         axes.set_ylim([0.88, 1.025])
         plt.yticks(np.arange(0.88, 1.026, 0.005))
     else:
         axes.set_ylim([0.9875, 1.0125])
-        plt.yticks(np.arange(0.9875, 1.0125, 0.0025))
+        plt.yticks(np.arange(0.9875, 1.0126, 0.0025))
 
     # extract labels and create legend
     handles, labels = axes.get_legend_handles_labels()
@@ -140,6 +158,8 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
 
     if display_plot:
         plt.show()
+
+    plt.clf()
 
 
 def make_plots_from_file(file_path, delimiter=';', plottype=None, save_path=None, second_file=None,
@@ -188,3 +208,4 @@ def make_plots_from_file(file_path, delimiter=';', plottype=None, save_path=None
         plt.savefig(save_path)
 
     plt.show()
+    plt.clf()
