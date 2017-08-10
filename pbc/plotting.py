@@ -98,7 +98,9 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
     ran = sobp_object.range()
     prox = sobp_object.proximal_range(val=0.990)
     beginning = target_range - target_modulation
+    prox_val = sobp_object.y_at_x(beginning)
     ending = target_range
+
     plateau_domain = np.arange(beginning - 1.0, ending + 1.0, step)
     plateau = sobp_object.overall_sum(plateau_domain)
     plateau_factor = sobp_object._flat_plateau_factor_helper()
@@ -117,13 +119,13 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
         plt.plot([beginning, beginning], [0.88, 1.025], color='red', label='start = %s' % beginning)
         plt.plot([ending, ending], [0.88, 1.025], color='magenta', label='end = %s' % ending)
         # 99-90 points
-        plt.plot(prox, 0.99, 'ro', label='proximal')
+        plt.plot(prox, prox_val, 'ro', label='proximal')
         plt.plot(ran, 0.90, 'co', label='distal')
 
     # result plateau
     plt.plot(plateau_domain, plateau, label='SOBP', color='black')
-    plt.title("Modulation (99-90): {0:.3f}, Proximal (99): {1:.3f}, Distal (90): {2:.3f}, Plt-fac: {3:.3f}"
-              .format(mod, prox, ran, plateau_factor))
+    plt.title("Modulation (99-90): {0:.3f}, Proximal ({4:.3f}): {1:.3f}, Distal (0.90): {2:.3f}, Plt-fac: {3:.3f}"
+              .format(mod, prox, ran, plateau_factor, prox_val))
 
     fig = plt.gcf()
     fig.set_size_inches(8, 6)

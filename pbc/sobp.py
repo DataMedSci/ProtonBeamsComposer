@@ -64,7 +64,7 @@ class SOBP(object):
         return "SOBP({0})".format(self.positions())
 
     def __str__(self):
-        return "SOBP Object consisting of peaks with positions:\n\t{0}\nDefault domain:\n\t{1}"\
+        return "SOBP Object consisting of peaks with positions:\n\t{0}\nDefault domain:\n\t{1}" \
             .format(self.positions(), self.def_domain)
 
     def _has_defined_domain(self, dom):
@@ -135,9 +135,13 @@ class SOBP(object):
             left = val_arr[:left_merge_idx]
             right = val_arr[right_merge_idx:]
         # find desired val in calculated partitions using interpolation
-        proximal = np.interp([threshold], left[::], domain[:left_merge_idx:])
-        distal = np.interp([threshold_right], right[::-1], np.flip(domain[right_merge_idx::], 0))
-        return proximal[0], distal[0]
+        if left_merge_idx != 0:
+            proximal, = np.interp([threshold], left[::], domain[:left_merge_idx:])
+        else:
+            proximal = 0
+            logger.debug("Proximal is on the edge of domain.")
+        distal, = np.interp([threshold_right], right[::-1], np.flip(domain[right_merge_idx::], 0))
+        return proximal, distal
 
     @property
     def def_domain(self):
@@ -161,6 +165,9 @@ class SOBP(object):
         if rescale_to_one:
             tmp_sum /= tmp_sum.max()
         return tmp_sum
+
+    def y_at_x(self, x):
+        return self.overall_sum(domain=[x])[0]
 
     def positions(self):
         """Return list of positions of BraggPeaks contained in SOBP"""
@@ -215,7 +222,7 @@ class SOBP(object):
         plateau_factor = self._flat_plateau_factor_helper()
         return plateau_factor ** 2
 
-    def optimize_sobp(self, target_modulation, target_range, optimization_options=None):
+    def optimize_sobp(self, target_modulation, target_range, optimization_options=None, experimental=False):
         """
         Optimise weights of peaks in SOBP object. This function does not
         move peaks from original position, it only manipulates their weights.
@@ -226,7 +233,7 @@ class SOBP(object):
         :return:
         """
         options = {
-            # 'disp': True,
+            'disp': False,
             'eps': 1e-8,  # If jac is approximated, use this value for the step size.
             'ftol': 1e-12,
             'gtol': 1e-12,  # Gradient norm must be less than gtol before successful termination.
@@ -238,7 +245,7 @@ class SOBP(object):
 
         # if external options are specified - overwrite default
         if optimization_options:
-            for option_name, option_value in optimization_options.iteritems():
+            for option_name, option_value in optimization_options.items():
                 options[option_name] = option_value
 
         initial_weights = []
@@ -257,9 +264,23 @@ class SOBP(object):
 
         # cut plateau domain a bit from right to exclude the drop to 0.9 'range'
         cut_from_right = diff_max_from_range_90(self.component_peaks[-1])
-        self._plateau_domain_for_optimization = np.arange(start=target_range - target_modulation,
-                                                          stop=target_range - cut_from_right,
-                                                          step=0.01)
+
+        if experimental:
+            start = target_range - target_modulation
+            end = target_range - cut_from_right
+            mid = end - start
+            mid *= 0.8
+            sparser_start = np.arange(start=start,
+                                      stop=start + mid,
+                                      step=0.1)
+            denser_end = np.arange(start=start + mid,
+                                   stop=end,
+                                   step=0.01)
+            self._plateau_domain_for_optimization = np.concatenate([sparser_start, denser_end])
+        else:
+            self._plateau_domain_for_optimization = np.arange(start=target_range - target_modulation,
+                                                              stop=target_range - cut_from_right,
+                                                              step=0.1)
 
         res = scipy.optimize.minimize(self._optimization_helper,
                                       x0=initial_weights,
@@ -268,6 +289,7 @@ class SOBP(object):
                                       method='L-BFGS-B',
                                       options=options)
         return res
+
 
 if __name__ == '__main__':
     from os.path import join

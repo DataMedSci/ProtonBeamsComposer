@@ -13,7 +13,8 @@ from pbc.sobp import SOBP
 logger = logging.getLogger(__name__)
 
 
-def optimization_wrapper(input_peaks, target_modulation, target_range, disable_plots=False, preview_start_plot=False):
+def optimization_wrapper(input_peaks, target_modulation, target_range, disable_plots=False, preview_start_plot=False,
+                         options_for_optimizer=None):
     """Just test some optimization options..."""
     start, stop, step = 0, target_range + 2.5, 0.01
     test_sobp = SOBP(input_peaks, def_domain=[start, stop, step])
@@ -30,7 +31,9 @@ def optimization_wrapper(input_peaks, target_modulation, target_range, disable_p
                   display_plot=True)
 
     time_st = time.time()
-    res = test_sobp.optimize_sobp(target_modulation=target_modulation, target_range=target_range)
+    res = test_sobp.optimize_sobp(target_modulation=target_modulation,
+                                  target_range=target_range,
+                                  optimization_options=options_for_optimizer)
     logger.info("Optimization function took {0:.2f} seconds".format(time.time() - time_st))
 
     logger.info("Optimization output:\n{0}".format(res))
@@ -89,6 +92,10 @@ def basic_optimization(input_args):
             y_peak = savgol_filter(y_peak, window_length=5, polyorder=3)
 
     testing_peak = BraggPeak(x_peak, y_peak)
+    if input_args.range > testing_peak.range():
+        raise ValueError("Impossible range specified: {0}, max range of peak is {1}."
+                         "\nUse --full range to generate full-range SOBP."
+                         .format(input_args.range, testing_peak.range()))
 
     if input_args.full == 'both':
         desired_range = testing_peak.range(val=0.90)
@@ -123,10 +130,15 @@ def basic_optimization(input_args):
     # base positions of peaks, range and desired modulation
     base_position = desired_range - desired_modulation
 
-    push_first_peak = diff_max_from_left_99(inp_peaks[-1])
+    # pull back last peak, especially when calculating max range SOBP,
+    # because position_of_max == distal_range is impossible to achieve in lab
     pull_back_last_peak = diff_max_from_range_90(inp_peaks[-1])
 
-    begin = base_position + push_first_peak
+    # todo: allow position of first peak to equal 0.0?
+    if base_position == 0:
+        begin = base_position + 0.0001
+    else:
+        begin = base_position
     end = desired_range - pull_back_last_peak
 
     starting_positions = np.linspace(start=begin, stop=end, num=number_of_peaks)
@@ -136,10 +148,14 @@ def basic_optimization(input_args):
         peak.weight = 0.1
     inp_peaks[-1].weight = 0.9
 
+    # just make quick calculation without going too deep
+    first_opt_dict = {'disp': False, 'eps': 1e-4, 'ftol': 1e-4, 'gtol': 1e-4}
+
     res_sobp_object = optimization_wrapper(input_peaks=inp_peaks,
                                            target_modulation=desired_modulation,
                                            target_range=desired_range,
-                                           disable_plots=input_args.no_plot)
+                                           disable_plots=True,  # input_args.no_plot,
+                                           options_for_optimizer=first_opt_dict)
 
     left_res, right_res = make_precise_end_calculations(res_sobp_object)
 
@@ -149,10 +165,21 @@ def basic_optimization(input_args):
                 right_res, desired_range, abs(desired_range - right_res)))
 
     # calculate difference between desired proximal/distal range and what we got from optimization
-    left_error = base_position - left_res
+    # for proximal - do not shift if generating full modulation or proximal >= 0.99 is already satisfied
+    if not input_args.full == 'both' and desired_range != desired_modulation and \
+       res_sobp_object.y_at_x(base_position) <= 0.99:
+        left_error = base_position - left_res
+        logger.info("Left (99) error after first optimization is: {0}".format(left_error))
+    else:
+        left_error = 0
+        logger.info("Left (99) is OK! Current val: {0}".format(res_sobp_object.y_at_x(base_position)))
+
     right_error = desired_range - right_res
-    logger.info("Left (99) error after first optimization is: {0}".format(left_error))
     logger.info("Right (90) error after first optimization is: {0}".format(right_error))
+
+    if end + right_error > testing_peak.range():
+        logger.critical("Shifting position exceeds range of base peak!")
+        raise ValueError("Shifting failed!")
 
     corrected_starting_positions = np.linspace(start=begin + left_error, stop=end + right_error, num=number_of_peaks)
 
