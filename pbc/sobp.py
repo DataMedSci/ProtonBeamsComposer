@@ -202,8 +202,8 @@ class SOBP(object):
         horizontal line (function y = target_val)
         """
         plateau = self.overall_sum(self._plateau_domain_for_optimization)
-        # iterate over plateau points and calculate diff from target
-        return sum([abs(target_val - pp) for pp in plateau])
+        # iterate over plateau points and calculate diff from target (chi^2)
+        return sum([(target_val - pp)**2 for pp in plateau])
 
     def _optimization_helper(self, data_to_unpack):  # , target_modulation, target_range):
         """
@@ -220,7 +220,7 @@ class SOBP(object):
         for idx, peak in enumerate(self.component_peaks):
             peak.weight = data_to_unpack[idx]
         plateau_factor = self._flat_plateau_factor_helper()
-        return plateau_factor ** 2
+        return plateau_factor
 
     def optimize_sobp(self, target_modulation, target_range, optimization_options=None, experimental=False):
         """
@@ -270,12 +270,8 @@ class SOBP(object):
             end = target_range - cut_from_right
             mid = end - start
             mid *= 0.8
-            sparser_start = np.arange(start=start,
-                                      stop=start + mid,
-                                      step=0.1)
-            denser_end = np.arange(start=start + mid,
-                                   stop=end,
-                                   step=0.01)
+            sparser_start = np.arange(start=start, stop=start + mid, step=0.1)
+            denser_end = np.arange(start=start + mid, stop=end, step=0.01)
             self._plateau_domain_for_optimization = np.concatenate([sparser_start, denser_end])
         else:
             self._plateau_domain_for_optimization = np.arange(start=target_range - target_modulation,

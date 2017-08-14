@@ -188,7 +188,7 @@ def make_plots_from_file(file_path, delimiter=';', plottype=None, save_path=None
         # main plot
         plt.plot(x_peak, y_peak, 'r', label='First plot')
         if second_file:
-            plt.plot(x_peak2, y_peak2, 'bx', label='Second plot')
+            plt.plot(x_peak2, y_peak2, 'b-', label='Second plot')
 
         axes = plt.gca()
         axes.set_xlim([beginning - 1.0, ending + 1.0])
@@ -200,7 +200,10 @@ def make_plots_from_file(file_path, delimiter=';', plottype=None, save_path=None
     else:
         plt.plot(x_peak, y_peak, 'r-', label='First plot')
         if second_file:
-            plt.plot(x_peak2, y_peak2, 'bx', label='Second plot')
+            plt.plot(x_peak2, y_peak2, 'b-', label='Second plot')
+
+    # plt.xlabel("Głębokośc w fantomie wodnym [mm]")
+    # plt.ylabel("Relatywna dawka")
 
     axes = plt.gca()
     handles, labels = axes.get_legend_handles_labels()
