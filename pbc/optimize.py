@@ -3,19 +3,30 @@ from os.path import join
 
 import logging
 import numpy as np
+import shutil
 
 from pbc.bragg_peak import BraggPeak
 from pbc.helpers import calculate_number_of_peaks_gottschalk_80_rule, diff_max_from_left_99, diff_max_from_range_90, \
-    make_precise_end_calculations, load_data_from_dump
+    make_precise_end_calculations, load_data_from_dump, create_output_dir
 from pbc.plotting import plot_plateau, plot_sobp
 from pbc.sobp import SOBP
 
 logger = logging.getLogger(__name__)
 
 
-def optimization_wrapper(input_peaks, target_modulation, target_range, disable_plots=False, preview_start_plot=False,
-                         options_for_optimizer=None):
-    """Just test some optimization options..."""
+def optimization_wrapper(input_peaks, target_modulation, target_range, output_dir=None, disable_plots=False,
+                         preview_start_plot=False, options_for_optimizer=None):
+    """
+    Optimization wrapper.
+
+    :param input_peaks: peaks used in optimize process
+    :param target_modulation: desired modulation aimed for
+    :param target_range: desired range (distal) aimed for
+    :param output_dir: path for plots etc.
+    :param disable_plots: disables all the plots in this function
+    :param preview_start_plot: shows preview plot before optimization
+    :param options_for_optimizer: dict with options for scipy optimize, given options override default
+    """
     start, stop, step = 0, target_range + 2.5, 0.01
     test_sobp = SOBP(input_peaks, def_domain=[start, stop, step])
     logger.info(test_sobp)
@@ -27,8 +38,9 @@ def optimization_wrapper(input_peaks, target_modulation, target_range, disable_p
                   step=step,
                   sobp_object=test_sobp,
                   helper_lines=False,
-                  save_plot=False,
-                  display_plot=True)
+                  plot_path=join(output_dir, 'preview_sobp.png'),
+                  display_plot=True,
+                  datafile_path=join(output_dir, 'preview_sobp.dat'))
 
     time_st = time.time()
     res = test_sobp.optimize_sobp(target_modulation=target_modulation,
@@ -50,18 +62,31 @@ def optimization_wrapper(input_peaks, target_modulation, target_range, disable_p
                   target_modulation=target_modulation,
                   target_range=target_range,
                   helper_lines=True,
-                  save_plot=False)
+                  plot_path=join(output_dir, 'sobp.png'),
+                  datafile_path=join(output_dir, 'sobp.dat'))
 
         plot_plateau(sobp_object=test_sobp,
                      target_modulation=target_modulation,
                      target_range=target_range,
-                     higher=False)
+                     higher=False,
+                     plot_path=join(output_dir, 'plateau_zoom.png'),
+                     datafile_path=join(output_dir, 'plateau_zoom.dat'))
+
+    logger.info("Optimization wrapper finished.")
 
     return test_sobp
 
 
 def basic_optimization(input_args):
     """Test overall optimization capabilities for given spread and range"""
+
+    # create output dir
+    output_dir = create_output_dir(input_args.name)
+
+    # log to file in output dir
+    file_log = logging.FileHandler(filename=join(output_dir, 'optimization.log'), mode='w')
+    logging.getLogger().addHandler(file_log)
+
     if input_args.spread > input_args.range:
         logger.critical("Spread cannot be greater than range!")
         return -1
@@ -73,8 +98,13 @@ def basic_optimization(input_args):
     # option and SHIELD-HIT12A simulation results
     if not input_args.input_bp_file:
         x_peak, y_peak = load_data_from_dump(file_name=join('data', 'cydos_new.csv'), delimiter=';')
+        shutil.copy(join('data', 'cydos_new.csv'), join(output_dir, 'bp.dat'))
+        logging.debug("Copying peak database ({0}) to output dir as bp.dat.".format('cydos_new.csv'))
     else:
         x_peak, y_peak = load_data_from_dump(file_name=input_args.input_bp_file, delimiter=input_args.delimeter)
+        shutil.copy(input_args.input_bp_file, join(output_dir, 'bp.dat'))
+        logging.debug("Copying peak database specified by user ({0}) to output dir as bp.dat.".format(
+                      input_args.input_bp_file))
 
     # if it is in centimeters convert to millimeters
     if x_peak.max() < 10:
@@ -86,10 +116,13 @@ def basic_optimization(input_args):
 
     if input_args.smooth:
         from scipy.signal import savgol_filter
+        logger.info("Applying filter to input data.")
         if input_args.window:
             y_peak = savgol_filter(y_peak, window_length=input_args.window, polyorder=3)
+            logger.info("Filter window = {0} used.".format(input_args.window))
         else:
             y_peak = savgol_filter(y_peak, window_length=5, polyorder=3)
+            logger.info("Filter window = {0} used.".format(5))
 
     testing_peak = BraggPeak(x_peak, y_peak)
     if input_args.range > testing_peak.range():
@@ -100,15 +133,19 @@ def basic_optimization(input_args):
     if input_args.full == 'both':
         desired_range = testing_peak.range(val=0.90)
         desired_modulation = desired_range
+        logger.info("Using full-range ({0}), full-modulation option ({1}).".format(desired_range, desired_modulation))
     elif input_args.full == 'range':
         desired_range = testing_peak.range(val=0.90)
         desired_modulation = input_args.spread
+        logger.info("Using full-range ({0}) option. Desired spread = {1}".format(desired_range, desired_modulation))
     elif input_args.full == 'spread':
         desired_range = input_args.range
         desired_modulation = desired_range
+        logger.info("Using full-modulation ({0}) option. Desired range = {1}".format(desired_modulation, desired_range))
 
-    if input_args.halfmod:
+    if input_args.halfmod and input_args.full != 'spread':
         desired_modulation = desired_range / 2
+        logger.info("Using half-modulation ({0}) option.".format(desired_modulation))
 
     if input_args.peaks:
         number_of_peaks = input_args.peaks
@@ -142,6 +179,7 @@ def basic_optimization(input_args):
     end = desired_range - pull_back_last_peak
 
     starting_positions = np.linspace(start=begin, stop=end, num=number_of_peaks)
+    logger.info("First setup for peaks is start = {0:.3f}; end= {1:.3f}".format(begin, end))
 
     for idx, peak in enumerate(inp_peaks):
         peak.position = starting_positions[idx]
@@ -151,9 +189,11 @@ def basic_optimization(input_args):
     # just make quick calculation without going too deep
     first_opt_dict = {'disp': False, 'eps': 1e-4, 'ftol': 1e-4, 'gtol': 1e-4}
 
+    logger.info("Running initial optimization...")
     res_sobp_object = optimization_wrapper(input_peaks=inp_peaks,
                                            target_modulation=desired_modulation,
                                            target_range=desired_range,
+                                           output_dir=output_dir,
                                            disable_plots=True,  # input_args.no_plot,
                                            options_for_optimizer=first_opt_dict)
 
@@ -186,9 +226,8 @@ def basic_optimization(input_args):
     plot_plateau(sobp_object=res_sobp_object,
                  target_modulation=desired_modulation,
                  target_range=desired_range,
-                 dump_path='plateau.csv',
-                 save_plot=True,
-                 plot_path='plateau.png')
+                 datafile_path=join(output_dir, 'preview_plateau.dat'),
+                 plot_path=join(output_dir, 'preview_plateau.png'))
 
     for idx, peak in enumerate(inp_peaks):
         peak.position = corrected_starting_positions[idx]
@@ -198,6 +237,7 @@ def basic_optimization(input_args):
     res_sobp_object = optimization_wrapper(input_peaks=inp_peaks,
                                            target_modulation=desired_modulation,
                                            target_range=desired_range,
+                                           output_dir=output_dir,
                                            disable_plots=input_args.no_plot)
 
     left_res, right_res = make_precise_end_calculations(res_sobp_object)
@@ -214,6 +254,7 @@ def basic_optimization(input_args):
     plot_plateau(sobp_object=res_sobp_object,
                  target_modulation=desired_modulation,
                  target_range=desired_range,
-                 dump_path='corrected_plateau.csv',
-                 save_plot=True,
-                 plot_path='corrected_plateau.png')
+                 datafile_path=join(output_dir, 'corrected_plateau.dat'),
+                 plot_path=join(output_dir, 'corrected_plateau.png'))
+
+    logger.info("Optimization process finished")

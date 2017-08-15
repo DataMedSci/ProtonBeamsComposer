@@ -32,7 +32,8 @@ Required:
 -r, --range [float]
 
 Advanced:
--f, --full ['range', 'spread', 'both']
+-n, --name [str] (name for output directory)
+-f, --full ['range', 'spread', 'both'] (generation options, result based on input file)
 -p, --halfmod (use half range as modulation value)
     --smooth (use Savgol filter to smooth input data)
     --window [int, odd] (specify window used by Savgol filter)

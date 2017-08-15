@@ -25,9 +25,8 @@ class BraggPeak(object):
         self.initial_position = bp_domain[np.array(bp_vals).argmax()]
         self.current_position = self.initial_position
         self._weight = 1.0
-        logger.debug("Creating BraggPeak...\nPrimary max position: %f\n"
-                     "Calculated spline:\n%s"
-                     % (self.initial_position, self.spline))
+        logger.debug("Creating BraggPeak...\n\tPrimary max position: {0}"
+                     "\n\tPeak range: {1}".format(self.initial_position, self.range()))
 
     def __repr__(self):
         return str("{0} with position: {1} and weight: {2}".format(

@@ -1,3 +1,7 @@
+from os import mkdir, listdir, getcwd
+from os.path import join
+import datetime
+
 import numpy as np
 
 
@@ -57,3 +61,23 @@ def make_precise_end_calculations(sobp_object):
     precise_dom = np.arange(-2, 30, 0.0001)
     ll, rr = sobp_object.section_bounds(domain=precise_dom, threshold=0.990, threshold_right=0.900)
     return ll, rr
+
+
+def create_output_dir(dir_name):
+    now = datetime.datetime.now()
+    time_marker = "{0}_{1}_{2}".format(now.day, now.month, now.year)
+    folder_name = str(dir_name + '_' + time_marker)
+
+    if 'output' not in listdir(getcwd()):
+        mkdir('output')
+
+    if folder_name in listdir(join(getcwd(), 'output')):
+        additional_number = 1
+        while folder_name + '_' + str(additional_number) in listdir(join(getcwd(), 'output')):
+            additional_number += 1
+        folder_name += '_' + str(additional_number)
+
+    path = join('output', folder_name)
+    mkdir(path)
+
+    return path

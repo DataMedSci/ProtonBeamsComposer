@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def plot_sobp(start, stop, sobp_object, target_modulation=None, target_range=None, step=0.01, helper_lines=True,
-              save_plot=False, plot_path=None, display_plot=True, dump_data=False, file_path=''):
+              plot_path=None, display_plot=True, datafile_path=None):
     """
     Plot SOBP from given starting point to stop point
 
@@ -20,11 +20,9 @@ def plot_sobp(start, stop, sobp_object, target_modulation=None, target_range=Non
     :param target_range: used as end of the plot
     :param step: specifies how dense should be the plot
     :param helper_lines: turns on/off vertical and horizontal helper lines on the plot
-    :param save_plot: if True - will attempt to save plot to disk
-    :param plot_path: path with extension where the plot will be saved, ignored when save_plot is False
+    :param plot_path: path with extension where the plot will be saved
     :param display_plot: if True - displays a standard window with plot
-    :param dump_data:
-    :param file_path:
+    :param datafile_path: path for saving datafile with plot data
     """
     mod = sobp_object.modulation()
     ran = sobp_object.range()
@@ -59,18 +57,18 @@ def plot_sobp(start, stop, sobp_object, target_modulation=None, target_range=Non
     axes.set_xlim([plot_domain[0], plot_domain[-1]])
     axes.set_ylim([0, 1.1])
 
-    if save_plot and plot_path:
+    if plot_path:
         try:
             logger.info("Saving SOBP plot as {0}".format(plot_path))
             plt.savefig(plot_path)
         except ValueError as e:
             logger.error("Error occurred while saving SOBP plot!\n{0}".format(e))
 
-    if file_path:
+    if datafile_path:
         try:
-            dump_data_to_file(plot_domain, sobp_vals, file_name=file_path)
-        except:
-            logger.error("Invalid path given!")
+            dump_data_to_file(plot_domain, sobp_vals, file_name=datafile_path)
+        except IOError:
+            logger.error("Invalid path for datafile given!")
 
     if display_plot:
         plt.show()
@@ -78,8 +76,8 @@ def plot_sobp(start, stop, sobp_object, target_modulation=None, target_range=Non
     plt.clf()
 
 
-def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper_lines=True, save_plot=False,
-                 plot_path=None, display_plot=True, dump_path='', higher=True):
+def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper_lines=True,
+                 plot_path=None, display_plot=True, datafile_path=None, higher=True):
     """
     Plot SOBP plateau
 
@@ -88,10 +86,9 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
     :param target_range: used as end of the plot
     :param step: specifies how dense should be the plot
     :param helper_lines: turns on/off vertical and horizontal helper lines on the plot
-    :param save_plot: if True - will attempt to save plot to disk
-    :param plot_path: path with extension where the plot will be saved, ignored when save_plot is False
+    :param plot_path: path with extension where the plot will be saved
     :param display_plot: if True - displays a standard window with plot
-    :param dump_path:
+    :param datafile_path:
     :param higher: make bigger bounds on vertical axis
     """
     mod = sobp_object.modulation()
@@ -103,7 +100,6 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
 
     plateau_domain = np.arange(beginning - 1.0, ending + 1.0, step)
     plateau = sobp_object.overall_sum(plateau_domain)
-    plateau_factor = sobp_object._flat_plateau_factor_helper()
 
     extended_plateau_domain = np.arange(beginning - 1.0, ending + 1.0, step)
     extended_plateau_vals = sobp_object.overall_sum(extended_plateau_domain)
@@ -124,8 +120,8 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
 
     # result plateau
     plt.plot(plateau_domain, plateau, label='SOBP', color='black')
-    plt.title("Modulation (99-90): {0:.3f}, Proximal ({4:.3f}): {1:.3f}, Distal (0.90): {2:.3f}, Plt-fac: {3:.3f}"
-              .format(mod, prox, ran, plateau_factor, prox_val))
+    plt.title("Modulation (99-90): {0:.3f}, Proximal ({3:.3f}): {1:.3f}, Distal (0.90): {2:.3f}"
+              .format(mod, prox, ran, prox_val))
 
     fig = plt.gcf()
     fig.set_size_inches(8, 6)
@@ -145,17 +141,17 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
     handles, labels = axes.get_legend_handles_labels()
     axes.legend(handles, labels)
 
-    if save_plot and plot_path:
+    if plot_path:
         try:
             logger.info("Saving SOBP plateau plot as {0}".format(plot_path))
             plt.savefig(plot_path)
         except ValueError as e:
             logger.error("Error occurred while saving SOBP plot!\n{0}".format(e))
 
-    if dump_path:
+    if datafile_path:
         try:
-            dump_data_to_file(extended_plateau_domain, extended_plateau_vals, file_name=dump_path)
-        except:
+            dump_data_to_file(extended_plateau_domain, extended_plateau_vals, file_name=datafile_path)
+        except IOError:
             logger.error("Invalid path given!")
 
     if display_plot:

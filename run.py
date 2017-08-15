@@ -12,6 +12,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--spread', type=float, required=True)
     parser.add_argument('-f', '--full', type=str, choices=['range', 'spread', 'both'])
     parser.add_argument('-p', '--halfmod', action='store_true')
+    parser.add_argument('-n', '--name', type=str, default='modulator')
 
     # advanced
     parser.add_argument('--smooth', action='store_true')
@@ -28,7 +29,7 @@ if __name__ == '__main__':
     # logging
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('-q', '--quiet', action='store_true')
-    parser.add_argument('-n', '--no-plot', action='store_true')
+    parser.add_argument('-o', '--no-plot', action='store_true')
     input_args = parser.parse_args(argv[1:])
 
     if input_args.verbose:
@@ -38,8 +39,11 @@ if __name__ == '__main__':
     else:
         log_level = logging.INFO
 
+    stream_log = logging.StreamHandler()
+
     logging.basicConfig(format='--> (%(asctime)s) - %(levelname)s - [%(name)s.%(funcName)s:%(lineno)s]\n\t%(message)s',
                         datefmt='%H:%M:%S',
-                        level=log_level)
+                        level=log_level,
+                        handlers=[stream_log])
 
     basic_optimization(input_args)
