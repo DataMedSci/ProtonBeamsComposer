@@ -8,6 +8,7 @@ import shutil
 from pbc.bragg_peak import BraggPeak
 from pbc.helpers import calculate_number_of_peaks_gottschalk_80_rule, diff_max_from_left_99, diff_max_from_range_90, \
     make_precise_end_calculations, load_data_from_dump, create_output_dir, dump_data_to_file
+from pbc.plexi import PlexiInterpolator
 from pbc.plotting import plot_plateau, plot_sobp
 from pbc.sobp import SOBP
 
@@ -106,6 +107,23 @@ def basic_optimization(input_args):
         shutil.copy(input_args.input_bp_file, join(output_dir, 'bp.dat'))
         logging.debug("Copying peak database specified by user ({0}) to output dir as bp.dat.".format(
                       input_args.input_bp_file))
+
+    # load plexi database which will be used to design
+    if not input_args.input_plexi_file:
+        plexi_thickness, plexi_range = load_data_from_dump(file_name=join('data', 'plexi_max.dat'), delimiter=';')
+        shutil.copy(join('data', 'plexi_max.dat'), join(output_dir, 'plexi.dat'))
+        logging.debug("Copying plexi thickness-to-range database ({0}) to output dir as bp.dat.".format('plexi.dat'))
+    else:
+        plexi_thickness, plexi_range = load_data_from_dump(file_name=input_args.input_bp_file,
+                                                           delimiter=input_args.delimeter)
+        shutil.copy(input_args.input_plexi_file, join(output_dir, 'plexi.dat'))
+        logging.debug("Copying plexi thickness-to-range database specified by user ({0}) to output dir"
+                      "as plexi.dat.".format(input_args.input_plexi_file))
+
+    logger.debug("Loaded plexi thickness-to-range database:\n{0}".format(np.array([plexi_thickness, plexi_range]).T))
+
+    plexi_interp = PlexiInterpolator(plexi_thickness, plexi_range)
+    logger.debug("Plexi interpolator created.")
 
     # if it is in centimeters convert to millimeters
     if x_peak.max() < 10:
@@ -252,10 +270,16 @@ def basic_optimization(input_args):
     logger.log(25, "Corrected right end at 0.90:\n\tfrom: {0:.16f}\n\tto: {1:.16f}\n\tbetter by: {2:.16f}".format(
                right_error, new_right_error, right_error - new_right_error))
 
+    # save results (positions with weights) to file
     res_weights = []
     for res_peak in res_sobp_object.component_peaks:
         res_weights.append(res_peak.weight)
     dump_data_to_file(domain=corrected_starting_positions, values=res_weights, file_name=join(output_dir, 'result.dat'))
+
+    # calculate plexi thickness for results and save to file
+    res_plexi_thick = plexi_interp.range_to_thickness(corrected_starting_positions)
+    logger.info("Calculated plexi thickness steps:\n{0}".format(res_plexi_thick))
+    np.savetxt(join(output_dir, "result_plexi.dat"), res_plexi_thick, delimiter=";", fmt='%.6f', newline='\n')
 
     plot_plateau(sobp_object=res_sobp_object,
                  target_modulation=desired_modulation,

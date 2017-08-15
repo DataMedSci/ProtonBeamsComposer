@@ -12,7 +12,7 @@ class PlexiInterpolator(object):
         if so - it will work as max_position_to_thickness mapper etc.
         """
         self.range_to_thickness = InterpolatedUnivariateSpline(range_table[::-1], thickness_table[::-1], ext=0)
-        self.thickness_to_range = InterpolatedUnivariateSpline(plexi_thickness, plexi_range, ext=0)
+        self.thickness_to_range = InterpolatedUnivariateSpline(thickness_table, range_table, ext=0)
 
     def range_to_thickness(self, val):
         # neither range nor max_position below zero is acceptable

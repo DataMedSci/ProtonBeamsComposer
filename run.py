@@ -24,6 +24,7 @@ if __name__ == '__main__':
 
     # input files
     parser.add_argument('-i', '--input_bp_file', type=str)
+    parser.add_argument('-l', '--input_plexi_file', type=str)
     parser.add_argument('-d', '--delimiter', type=str, help='delimiter used in BP file')
 
     # logging
