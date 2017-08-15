@@ -14,6 +14,7 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--sec_delimiter', help="Delimiter used in second file")
 
     parser.add_argument('-p', '--plottype', type=str, choices=['sobp', 'plateau', 'none'], default='none')
+    parser.add_argument('-z', '--zoom_plateau', action='store_true')
     parser.add_argument('-s', '--savepath', type=str, help="If specified, used as path for saving the plot")
 
     parser.add_argument('-v', '--verbose', action='store_true')
@@ -36,4 +37,5 @@ if __name__ == '__main__':
                          plottype=input_args.plottype,
                          save_path=input_args.savepath,
                          second_file=input_args.second_file,
-                         second_file_delimiter=input_args.sec_delimiter)
+                         second_file_delimiter=input_args.sec_delimiter,
+                         zoom_on_plateau=input_args.zoom_plateau)

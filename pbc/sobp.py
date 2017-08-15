@@ -187,6 +187,9 @@ class SOBP(object):
         """Return proximal-range of SOBP"""
         domain = self._has_defined_domain(domain)
         proximal, _ = self.section_bounds(domain=domain, threshold=val)
+        if proximal < 0:
+            logger.info("Proximal ({0}) shifted to zero from negative value ({1:.4f})".format(val, proximal))
+            return 0.
         return proximal
 
     def modulation(self, domain=None, left_threshold=0.99, right_threshold=0.9):

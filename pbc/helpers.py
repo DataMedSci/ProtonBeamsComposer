@@ -33,15 +33,17 @@ def argmin_with_condition(array, val):
         return 0
 
 
-def dump_data_to_file(domain, values, file_name):
+def dump_data_to_file(domain, values, file_name, delimiter=";"):
+    """A helper function for dumping 2-column data like domain & values"""
     temp = np.column_stack((domain, values))
-    with open(file=file_name, mode='wb') as dump_file:
-        np.savetxt(dump_file, temp, delimiter=";", fmt='%.18f', newline='\n')
+    # with open(file=file_name, mode='wb') as dump_file:
+    np.savetxt(file_name, temp, delimiter=delimiter, fmt='%.18f', newline='\n')
 
 
 def load_data_from_dump(file_name, delimiter=';'):
-    with open(file=file_name, mode='r') as dump_file:
-        x, y = np.loadtxt(dump_file, delimiter=delimiter, usecols=(0, 1), unpack=True)
+    """A helper function for loading 2-column data like domain & values"""
+    # with open(file=file_name, mode='r') as dump_file:
+    x, y = np.loadtxt(file_name, delimiter=delimiter, usecols=(0, 1), unpack=True)
     return x, y
 
 

@@ -45,5 +45,5 @@ Advanced:
 Logging etc.:
 -v, --verbose (DEBUG logging level)
 -q, --quiet (do not print anything below WARNING level)
--n, --no-plot (disable showing most of the plots)
+-o, --no-plot (disable showing most of the plots)
 ```

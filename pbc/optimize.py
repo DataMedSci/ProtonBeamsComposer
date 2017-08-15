@@ -7,7 +7,7 @@ import shutil
 
 from pbc.bragg_peak import BraggPeak
 from pbc.helpers import calculate_number_of_peaks_gottschalk_80_rule, diff_max_from_left_99, diff_max_from_range_90, \
-    make_precise_end_calculations, load_data_from_dump, create_output_dir
+    make_precise_end_calculations, load_data_from_dump, create_output_dir, dump_data_to_file
 from pbc.plotting import plot_plateau, plot_sobp
 from pbc.sobp import SOBP
 
@@ -55,24 +55,25 @@ def optimization_wrapper(input_peaks, target_modulation, target_range, output_di
     for peak_idx, peak_object in enumerate(test_sobp.component_peaks):
         peak_object.weight = optimization_results[peak_idx]
 
-    if not disable_plots:
-        plot_sobp(start=start,
-                  stop=stop,
-                  sobp_object=test_sobp,
-                  target_modulation=target_modulation,
-                  target_range=target_range,
-                  helper_lines=True,
-                  plot_path=join(output_dir, 'sobp.png'),
-                  datafile_path=join(output_dir, 'sobp.dat'))
+    plot_sobp(start=start,
+              stop=stop,
+              sobp_object=test_sobp,
+              target_modulation=target_modulation,
+              target_range=target_range,
+              helper_lines=True,
+              plot_path=join(output_dir, 'sobp.png'),
+              datafile_path=join(output_dir, 'sobp.dat'),
+              display_plot=not disable_plots)
 
-        plot_plateau(sobp_object=test_sobp,
-                     target_modulation=target_modulation,
-                     target_range=target_range,
-                     higher=False,
-                     plot_path=join(output_dir, 'plateau_zoom.png'),
-                     datafile_path=join(output_dir, 'plateau_zoom.dat'))
+    plot_plateau(sobp_object=test_sobp,
+                 target_modulation=target_modulation,
+                 target_range=target_range,
+                 higher=False,
+                 plot_path=join(output_dir, 'plateau_zoom.png'),
+                 datafile_path=join(output_dir, 'plateau_zoom.dat'),
+                 display_plot=not disable_plots)
 
-    logger.info("Optimization wrapper finished.")
+    logger.info("> End of optimization wrapper <")
 
     return test_sobp
 
@@ -194,7 +195,7 @@ def basic_optimization(input_args):
                                            target_modulation=desired_modulation,
                                            target_range=desired_range,
                                            output_dir=output_dir,
-                                           disable_plots=True,  # input_args.no_plot,
+                                           disable_plots=input_args.no_plot,
                                            options_for_optimizer=first_opt_dict)
 
     left_res, right_res = make_precise_end_calculations(res_sobp_object)
@@ -251,10 +252,15 @@ def basic_optimization(input_args):
     logger.log(25, "Corrected right end at 0.90:\n\tfrom: {0:.16f}\n\tto: {1:.16f}\n\tbetter by: {2:.16f}".format(
                right_error, new_right_error, right_error - new_right_error))
 
+    res_weights = []
+    for res_peak in res_sobp_object.component_peaks:
+        res_weights.append(res_peak.weight)
+    dump_data_to_file(domain=corrected_starting_positions, values=res_weights, file_name=join(output_dir, 'result.dat'))
+
     plot_plateau(sobp_object=res_sobp_object,
                  target_modulation=desired_modulation,
                  target_range=desired_range,
                  datafile_path=join(output_dir, 'corrected_plateau.dat'),
                  plot_path=join(output_dir, 'corrected_plateau.png'))
 
-    logger.info("Optimization process finished")
+    logger.info(">>> Optimization process finished <<<")

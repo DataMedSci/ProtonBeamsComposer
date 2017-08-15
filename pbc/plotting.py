@@ -3,7 +3,9 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 
+from pbc.bragg_peak import BraggPeak
 from pbc.helpers import dump_data_to_file, load_data_from_dump
+from pbc.sobp import SOBP
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +59,9 @@ def plot_sobp(start, stop, sobp_object, target_modulation=None, target_range=Non
     axes.set_xlim([plot_domain[0], plot_domain[-1]])
     axes.set_ylim([0, 1.1])
 
+    plt.xlabel("Depth in water phantom [mm]")
+    plt.ylabel("Relative dose")
+
     if plot_path:
         try:
             logger.info("Saving SOBP plot as {0}".format(plot_path))
@@ -94,8 +99,8 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
     mod = sobp_object.modulation()
     ran = sobp_object.range()
     prox = sobp_object.proximal_range(val=0.990)
+    prox_val = sobp_object.y_at_x(prox)
     beginning = target_range - target_modulation
-    prox_val = sobp_object.y_at_x(beginning)
     ending = target_range
 
     plateau_domain = np.arange(beginning - 1.0, ending + 1.0, step)
@@ -137,6 +142,11 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
         axes.set_ylim([0.9875, 1.0125])
         plt.yticks(np.arange(0.9875, 1.0126, 0.0025))
 
+    # plt.xlabel("Głębokośc w fantomie wodnym [mm]")
+    plt.xlabel("Depth in water phantom [mm]")
+    # plt.ylabel("Relatywna dawka")
+    plt.ylabel("Relative dose")
+
     # extract labels and create legend
     handles, labels = axes.get_legend_handles_labels()
     axes.legend(handles, labels)
@@ -160,53 +170,44 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
     plt.clf()
 
 
-def make_plots_from_file(file_path, delimiter=';', plottype=None, save_path=None, second_file=None,
-                         second_file_delimiter=';'):
+def make_plots_from_file(file_path, delimiter=";", plottype=None, save_path=None, second_file=None,
+                         second_file_delimiter=";", zoom_on_plateau=False):
+
     x_peak, y_peak = load_data_from_dump(file_path, delimiter)
-    if second_file:
-        x_peak2, y_peak2 = load_data_from_dump(second_file, second_file_delimiter)
 
-    if plottype == "sobp":
-        # todo: for now just return standard plot, another external file with
-        # bp and positions and weights may be required
-        plt.plot(x_peak, y_peak)
-    elif plottype == "plateau":
-        beginning = np.floor(x_peak[0])
-        ending = x_peak[-1]
+    if plottype == "sobp" or plottype == "plateau":
+        if not second_file:
+            logger.error("Second file with positions and weights is required to plot SOBP!")
+            return -1
+        else:
+            x_peak2, y_peak2 = load_data_from_dump(second_file, second_file_delimiter)
 
-        # horizontal helper lines
-        plt.plot([beginning - 1.0, ending + 1.0], [0.98, 0.98], color='orange')
-        plt.plot([beginning - 1.0, ending + 1.0], [0.99, 0.99], color='green')
-        plt.plot([beginning - 1.0, ending + 1.0], [1, 1], color='blue')
-        plt.plot([beginning - 1.0, ending + 1.0], [1.01, 1.01], color='green')
-        plt.plot([beginning - 1.0, ending + 1.0], [1.02, 1.02], color='orange')
+        bp_object = BraggPeak(x_peak, y_peak)
 
-        # main plot
-        plt.plot(x_peak, y_peak, 'r', label='First plot')
-        if second_file:
-            plt.plot(x_peak2, y_peak2, 'b-', label='Second plot')
+        sobp_params = []
+        for idx, val in enumerate(x_peak2):
+            sobp_params.append([val, y_peak2[idx]])
 
-        axes = plt.gca()
-        axes.set_xlim([beginning - 1.0, ending + 1.0])
-        axes.set_ylim([0.97, 1.03])
+        sobp_object = SOBP(bragg_peaks=bp_object, param_list=sobp_params)
+        sobp_object.def_domain = np.arange(x_peak2.min() - 1, x_peak2.max() + 1, 0.01)
 
-        # set some denser labels on axis
-        plt.xticks(np.arange(beginning - 1.0, ending + 1.1, 1))
-        plt.yticks(np.arange(0.97, 1.03, 0.005))
+        if plottype == "sobp":
+            plot_sobp(x_peak2[0], x_peak2[-1], sobp_object, plot_path=save_path)
+            return
+        else:
+            rng = x_peak2[-1]
+            mdl = x_peak2[-1] - x_peak2[0]
+            plot_plateau(sobp_object=sobp_object, target_range=rng, target_modulation=mdl, plot_path=save_path,
+                         higher=not zoom_on_plateau)
+            return
     else:
         plt.plot(x_peak, y_peak, 'r-', label='First plot')
         if second_file:
+            x_peak2, y_peak2 = load_data_from_dump(second_file, second_file_delimiter)
             plt.plot(x_peak2, y_peak2, 'b-', label='Second plot')
 
-    # plt.xlabel("Głębokośc w fantomie wodnym [mm]")
-    # plt.ylabel("Relatywna dawka")
+        if save_path:
+            plt.savefig(save_path)
 
-    axes = plt.gca()
-    handles, labels = axes.get_legend_handles_labels()
-    axes.legend(handles, labels)
-
-    if save_path:
-        plt.savefig(save_path)
-
-    plt.show()
-    plt.clf()
+        plt.show()
+        plt.clf()
