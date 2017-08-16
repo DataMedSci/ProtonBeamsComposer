@@ -1,20 +1,23 @@
 import logging
+from copy import copy
 
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate
 
-logging.basicConfig(level=0)
 logger = logging.getLogger(__name__)
 
 
 class BraggPeak(object):
     def __init__(self, bp_domain, bp_vals):
         """
-        BraggPeak is a function created from bp_domain and bp_vals
-        using scipy.interpolate module. Whenever a function is called,
+        BraggPeak object is a function created from bp_domain and bp_vals
+        using scipy.interpolate module. Whenever a class function is called,
         this calculated spline function along with domain specified by user
-        are used. bp_domain and bp_vals are lost after initialization.
+        is used.
+
+        :param bp_domain: used as a domain in interpolation, lost after class initialization
+        :param bp_vals: used as values in interpolation, lost after class initialization
         """
         if len(bp_domain) != len(bp_vals):
             raise ValueError("Domain and values have different lengths!")
@@ -22,21 +25,18 @@ class BraggPeak(object):
         self.initial_position = bp_domain[np.array(bp_vals).argmax()]
         self.current_position = self.initial_position
         self._weight = 1.0
-        logger.debug("Creating BraggPeak...\nPrimary max position: %f\n"
-                     "Calculated spline:\n%s"
-                     % (self.initial_position, self.spline))
+        logger.debug("Creating BraggPeak...\n\tPrimary max position: {0}"
+                     "\n\tPeak range: {1}".format(self.initial_position, self.range()))
 
-    # todo: add more class methods like __len__, __setitem__
-    # https://docs.python.org/3/reference/datamodel.html
-    def __str__(self):
+    def __repr__(self):
         return str("{0} with position: {1} and weight: {2}".format(
                    self.__class__.__name__, self.position, self.weight))
 
-    def __repr__(self):
-        return repr(self.spline)
+    def __str__(self):
+        return str(self.spline)
 
     def __getitem__(self, point):
-        """Returns value for given x axis point"""
+        """Returns value for given point on X-axis"""
         return self.spline(point)
 
     @property
@@ -62,34 +62,77 @@ class BraggPeak(object):
         """Calculate BP values for given domain"""
         return self._weight * self.spline(domain + self.initial_position - self.current_position)
 
-    def range(self, domain, val=0.9):
-        """Return range at given value on the dropping/further side of BP"""
-        val_arr = self.evaluate(domain)
+    def _calculate_idx_for_given_height_value(self, domain, val=0.8):
+        """
+        This is a helper function and it returns indices based on given domain.
+
+        For single peak this should find closest value to given
+        on the left and right side of BraggPeak.
+        This functions splits search domain in two parts to ensure
+        two different points from left and right side of the peak.
+
+        :param domain - search domain
+        :param val - percentage value where the width is calculated at
+        """
+        val_arr = self.evaluate(domain=domain)
         if val > val_arr.max():
             raise ValueError('Desired values cannot be greater than max in BraggPeak!')
         merge_idx = val_arr.argmax()
+        left = val_arr[:merge_idx]
         right = val_arr[merge_idx:]
-        idx = (np.abs(right - val)).argmin() + merge_idx
-        return domain[idx]
+        try:
+            idx_left = (np.abs(left - val)).argmin()
+        except ValueError:
+            idx_left = None
+        idx_right = (np.abs(right - val)).argmin()
+        return idx_left, merge_idx + idx_right
+
+    def range(self, val=0.90, precision=0.001):
+        """Return range at given value on the dropping/further side of BP"""
+        pos = self.position
+        tmp_dom = np.arange(pos, pos + 2, precision)
+        peak_cp = copy(self)
+        peak_cp.weight = 1.0
+        ran = np.interp([val], peak_cp.evaluate(tmp_dom)[::-1], tmp_dom[::-1])
+        return ran[0]
+
+    def proximal_range(self, val=0.990, precision=0.001):
+        pos = self.position
+        tmp_dom = np.arange(pos - 2, pos, precision)
+        peak_cp = copy(self)
+        peak_cp.weight = 1.0
+        proximal = np.interp([val], peak_cp.evaluate(tmp_dom), tmp_dom)
+        return proximal[0]
+
+    def width_at(self, val=0.80, precision=0.001):
+        distal = self.range(val=val, precision=precision)
+        proximal = self.proximal_range(val=val, precision=precision)
+        return distal - proximal
 
 
 if __name__ == '__main__':
     from os.path import join
-    import pandas as pd
+    from beprof import profile
+    from pbc.helpers import load_data_from_dump
 
-    with open(join("..", "bp.csv"), 'r') as bp_file:
-        data = pd.read_csv(bp_file, sep=';')
+    x_peak, y_peak = load_data_from_dump(file_name=join('..', 'data', 'cydos1.dat'), delimiter=' ')
+    # x_peak, y_peak = load_data_from_dump(file_name=join('..', 'data', '3500.dat'), delimiter=' ')
 
-    x_peak = data[data.columns[0]].as_matrix()
-    y_peak = data[data.columns[1]].as_matrix()
+    y_peak /= y_peak.max()
 
     a = BraggPeak(x_peak, y_peak)
 
-    a.weight = .95
-    a.position = 12.5
+    yy = np.vstack((x_peak, y_peak)).T
+    prof = profile.Profile(yy)
 
-    test_domain = np.arange(0, 30, .1)
-    kle = a.evaluate(test_domain)
-    print(a.range(test_domain))
-    plt.plot(test_domain, kle)
+    print("left 99% bef", prof.x_at_y(0.99, reverse=False))
+    print("left 99% pbc", a.proximal_range(val=0.99))
+    print("right 90% bef", prof.x_at_y(0.90, reverse=True))
+    print("right 90% pbc", a.range(0.90))
+
+    print("wid new", a.width_at(val=0.80))
+
+    # they should cover each other
+    # plt.plot(prof.x, prof.y, 'r')
+    plt.plot(x_peak, y_peak, 'b')
     plt.show()

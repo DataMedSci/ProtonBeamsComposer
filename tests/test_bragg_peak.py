@@ -93,5 +93,4 @@ class TestBraggPeakFunctions(unittest.TestCase):
         self.assertAlmostEqual(normalized_vals.max(), self.bp[self.bp.position])
 
     def test_range(self):
-        dom = np.arange(5, 10, 0.01)
-        self.assertAlmostEqual(self.bp.range(dom), 7.75)
+        self.assertAlmostEqual(self.bp.range(), 7.75164143)

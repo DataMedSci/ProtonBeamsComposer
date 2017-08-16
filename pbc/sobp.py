@@ -5,8 +5,8 @@ import numpy as np
 import scipy.optimize
 
 from pbc.bragg_peak import BraggPeak
+from pbc.helpers import diff_max_from_range_90
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -46,7 +46,7 @@ class SOBP(object):
                 tmp_peak.weight = wei
                 self.component_peaks.append(tmp_peak)
         else:
-            raise ValueError('Unsupported init data.')
+            raise ValueError("Unsupported init data.")
         if def_domain:
             try:
                 self._def_domain = np.arange(def_domain[0], def_domain[1], def_domain[2])
@@ -58,11 +58,13 @@ class SOBP(object):
         else:
             self._def_domain = None
 
+        self._plateau_domain_for_optimization = None
+
     def __repr__(self):
         return "SOBP({0})".format(self.positions())
 
     def __str__(self):
-        return "SOBP Object consisting of peaks with positions:\n\t{0}\nDefault domain:\n\t{1}"\
+        return "SOBP Object consisting of peaks with positions:\n\t{0}\nDefault domain:\n\t{1}" \
             .format(self.positions(), self.def_domain)
 
     def _has_defined_domain(self, dom):
@@ -80,7 +82,7 @@ class SOBP(object):
         else:
             raise ValueError("No domain specified (argument/default)!")
 
-    def _section_bounds_idx(self, domain=None, threshold=0.9, threshold_right=None):
+    def section_bounds(self, domain=None, threshold=0.9, threshold_right=0.9):
         """
         Helper function.
 
@@ -95,16 +97,17 @@ class SOBP(object):
         This functions splits search domain in parts to ensure
         two different points from left and right side of the peak.
 
-        :param domain - search domain, if none given use default domain
-        :param threshold - threshold value on the left side
-        :param threshold_right - additional parameter for threshold value on the right side
+        :param domain: search domain, if none given use default domain
+        :param threshold: threshold value on the left side
+        :param threshold_right: additional parameter for threshold value on the right side
         """
         domain = self._has_defined_domain(domain)
-        val_arr = self.overall_sum(domain)
-        if not threshold_right:
-            threshold_right = threshold
+        val_arr = self.overall_sum(domain=domain, rescale_to_one=False)
         if threshold > val_arr.max() or threshold_right > val_arr.max():
-            raise ValueError('Desired values cannot be greater than max in SOBP, which is %s!' % val_arr.max())
+            val_arr = self.overall_sum(domain=domain, rescale_to_one=True)
+            logger.warning("Division by max value in SOBP occurred!")
+            if threshold > val_arr.max() or threshold_right > val_arr.max():
+                raise ValueError("Desired values cannot be greater than max in SOBP, which is %s!" % val_arr.max())
         tmp_idx_left = []
         tmp_idx_right = []
         # iterate over known peak max positions and check if values are satisfying our val criteria
@@ -127,30 +130,18 @@ class SOBP(object):
         else:
             # default split based on position of max in SOBP
             # to ensure getting 2 different points
-            merge_idx = val_arr.argmax()
-            left = val_arr[:merge_idx]
-            right = val_arr[merge_idx:]
-        # find idx of desired val in calculated partitions
-        idx_left = self._argmin(left, threshold)
-        idx_right = self._argmin(right, threshold_right)
-        return idx_left, len(left) + gap_between + idx_right
-
-    @staticmethod
-    def _argmin(array, val):
-        """
-        Find index of closest element in array preserving condition: array[idx] >= val
-        """
-        dist = 99999
-        position = None
-        for i, elem in enumerate(array):
-            if np.abs(elem - val) < dist and elem >= val:
-                dist = np.abs(elem - val)
-                position = i
-        if position:
-            return position
+            left_merge_idx = val_arr.argmax()
+            right_merge_idx = left_merge_idx
+            left = val_arr[:left_merge_idx]
+            right = val_arr[right_merge_idx:]
+        # find desired val in calculated partitions using interpolation
+        if left_merge_idx != 0:
+            proximal, = np.interp([threshold], left[::], domain[:left_merge_idx:])
         else:
-            logger.debug("Nothing found for: %s, zero idx returned." % val)
-            return 0
+            proximal = 0
+            logger.debug("Proximal is on the edge of domain.")
+        distal, = np.interp([threshold_right], right[::-1], np.flip(domain[right_merge_idx::], 0))
+        return proximal, distal
 
     @property
     def def_domain(self):
@@ -160,11 +151,10 @@ class SOBP(object):
     def def_domain(self, domain_array):
         self._def_domain = domain_array
 
-    def overall_sum(self, domain=None):
+    def overall_sum(self, domain=None, rescale_to_one=False):
         """
         Calculate sum of peaks included in SOBP using given or default domain.
         If none of the above is specified - raise ValueError.
-        Also, divide calculated sum by its max value and return as result.
         """
         domain = self._has_defined_domain(domain)
         tmp_sobp = []
@@ -172,8 +162,12 @@ class SOBP(object):
             tmp_peak = peak.evaluate(domain)
             tmp_sobp.append(tmp_peak)
         tmp_sum = sum(tmp_sobp)
-        tmp_sum /= tmp_sum.max()
+        if rescale_to_one:
+            tmp_sum /= tmp_sum.max()
         return tmp_sum
+
+    def y_at_x(self, x):
+        return self.overall_sum(domain=[x])[0]
 
     def positions(self):
         """Return list of positions of BraggPeaks contained in SOBP"""
@@ -181,48 +175,127 @@ class SOBP(object):
 
     def fwhm(self, domain=None):
         """Full width at half maximum"""
-        return self.modulation(domain, left_threshold=0.5)
+        return self.modulation(domain, left_threshold=0.5, right_threshold=0.5)
 
     def range(self, val=0.9, domain=None):
+        """Return distal-range of SOBP (at the furthest end)"""
         domain = self._has_defined_domain(domain)
-        _, right_idx = self._section_bounds_idx(domain, val)
-        return domain[right_idx]
+        _, distal = self.section_bounds(domain=domain, threshold=val)
+        return distal
 
-    def modulation(self, domain=None, left_threshold=0.9, right_threshold=None):
+    def proximal_range(self, val=0.99, domain=None):
+        """Return proximal-range of SOBP"""
         domain = self._has_defined_domain(domain)
-        left_idx, right_idx = self._section_bounds_idx(domain, left_threshold, right_threshold)
-        return domain[right_idx] - domain[left_idx]
+        proximal, _ = self.section_bounds(domain=domain, threshold=val)
+        if proximal < 0:
+            logger.info("Proximal ({0}) shifted to zero from negative value ({1:.4f})".format(val, proximal))
+            return 0.
+        return proximal
 
-    def _optimization_helper(self, data_to_unpack, target_modulation):
+    def modulation(self, domain=None, left_threshold=0.99, right_threshold=0.9):
+        """Calculate modulation using given thresholds"""
+        domain = self._has_defined_domain(domain)
+        proximal, distal = self.section_bounds(domain=domain, threshold=left_threshold, threshold_right=right_threshold)
+        return distal - proximal
+
+    def _flat_plateau_factor_helper(self, target_val=1.0):
+        """
+        Helper function for optimization - calculate how flat is SOBP plateau
+        using square of differences between plateau points and target
+        horizontal line (function y = target_val)
+        """
+        plateau = self.overall_sum(self._plateau_domain_for_optimization)
+        # iterate over plateau points and calculate diff from target (chi^2)
+        return sum([(target_val - pp)**2 for pp in plateau])
+
+    def _optimization_helper(self, data_to_unpack):  # , target_modulation, target_range):
+        """
+        Helper function for scipy.optimize - should calculate modulation
+        and plateau factor (how flat is SOBP plateau between two points:
+            - target_range
+            - target_range - target_modulation
+
+        :param data_to_unpack: data from scipy.optimize (list of peak weights)
+        :return:
+        """
         if len(data_to_unpack) != len(self.component_peaks):
-            raise ValueError("Length check failed...")
+            raise ValueError("Length check failed for data to unpack...")
         for idx, peak in enumerate(self.component_peaks):
             peak.weight = data_to_unpack[idx]
-        return (self.modulation() - target_modulation)**2
+        plateau_factor = self._flat_plateau_factor_helper()
+        return plateau_factor
 
-    def optimize_modulation(self, target_modulation):
+    def optimize_sobp(self, target_modulation, target_range, optimization_options=None, experimental=False):
+        """
+        Optimise weights of peaks in SOBP object. This function does not
+        move peaks from original position, it only manipulates their weights.
+
+        :param target_modulation:
+        :param target_range:
+        :param optimization_options: option dict passed to scipy.optimization function
+        :return:
+        """
+        options = {
+            'disp': False,
+            'eps': 1e-8,  # If jac is approximated, use this value for the step size.
+            'ftol': 1e-12,
+            'gtol': 1e-12,  # Gradient norm must be less than gtol before successful termination.
+            'maxls': 40,
+            'maxfun': 30000,
+            'maxiter': 15000,
+            'maxcor': 40,
+        }
+
+        # if external options are specified - overwrite default
+        if optimization_options:
+            for option_name, option_value in optimization_options.items():
+                options[option_name] = option_value
+
         initial_weights = []
         bound_list = []
+        # weight for BP has to be 0 >= weight >=1 and optimization
+        # shifts weight by eps, so to prevent ValueErrors from BraggPeak.weight
+        # make the bounds smaller by eps
+        lower_bound = 0.0 + options['eps']
+        upper_bound = 1.0 - options['eps']
+
         for peak in self.component_peaks:
             initial_weights.append(peak.weight)
-            bound_list.append((.01, .99))
+            bound_list.append((lower_bound, upper_bound))
+
         initial_weights = np.array(initial_weights)
-        res = scipy.optimize.minimize(self._optimization_helper, initial_weights, args=target_modulation,
-                                      bounds=bound_list, method='L-BFGS-B', options={
-                                            "disp": True, 'eps': 1e-02, 'ftol': 1e-20, 'gtol': 1e-20,  'maxls': 40
-                                        })
+
+        # cut plateau domain a bit from right to exclude the drop to 0.9 'range'
+        cut_from_right = diff_max_from_range_90(self.component_peaks[-1])
+
+        if experimental:
+            start = target_range - target_modulation
+            end = target_range - cut_from_right
+            mid = end - start
+            mid *= 0.8
+            sparser_start = np.arange(start=start, stop=start + mid, step=0.1)
+            denser_end = np.arange(start=start + mid, stop=end, step=0.01)
+            self._plateau_domain_for_optimization = np.concatenate([sparser_start, denser_end])
+        else:
+            self._plateau_domain_for_optimization = np.arange(start=target_range - target_modulation,
+                                                              stop=target_range - cut_from_right,
+                                                              step=0.1)
+
+        res = scipy.optimize.minimize(self._optimization_helper,
+                                      x0=initial_weights,
+                                      # args=(target_modulation, target_range),
+                                      bounds=bound_list,
+                                      method='L-BFGS-B',
+                                      options=options)
         return res
+
 
 if __name__ == '__main__':
     from os.path import join
     import matplotlib.pyplot as plt
-    import pandas as pd
+    from pbc.helpers import load_data_from_dump
 
-    with open(join("..", "bp.csv"), 'r') as bp_file:
-        data = pd.read_csv(bp_file, sep=';')
-
-    x_peak = data[data.columns[0]].as_matrix()
-    y_peak = data[data.columns[1]].as_matrix()
+    x_peak, y_peak = load_data_from_dump(file_name=join("..", "data", "cydos1.dat"), delimiter=' ')
 
     a = BraggPeak(x_peak, y_peak)
     a.position = 24.
@@ -262,17 +335,13 @@ if __name__ == '__main__':
 
     t = 0.75
     t2 = 0.6
-    ll, rr = test_sobp._section_bounds_idx(threshold=t, threshold_right=t2)
+    ll, rr = test_sobp.section_bounds(threshold=t, threshold_right=t2)
     print(ll, rr)
-    print(test_domain[ll])
-    print(test_domain[rr])
-    print(sobp_vals[ll], sobp_vals[rr])
-    ll = test_domain[ll]
-    rr = test_domain[rr]
+
     plt.plot([ll, ll], [0, mx], color='yellow')
     plt.plot([rr, rr], [0, mx], color='orange')
-    plt.plot([start, stop], [t, t], color='yellow', label=str(t) + '; left (val=%s)' % ll)
-    plt.plot([start, stop], [t2, t2], color='orange', label=str(t2) + '; right (val=%s)' % rr)
+    plt.plot([start, stop], [t, t], color='yellow', label=str(t) + "; left (val=%s)" % ll)
+    plt.plot([start, stop], [t2, t2], color='orange', label=str(t2) + "; right (val=%s)" % rr)
 
     tmp_fwhm = test_sobp.fwhm()
     tmp_range = test_sobp.range(val=t)
@@ -285,6 +354,5 @@ if __name__ == '__main__':
     for p in inp_peaks:
         plt.plot(test_domain, p.evaluate(test_domain), label=p.position)
     plt.legend()
-    plt.title("FWHM: {0:.2f}, range: {1:.2f}, modulation: {2:.2f} (l_threshold:{3:.2f},r_threshold:{4:.2f})"
-              .format(tmp_fwhm, tmp_range, tmp_modulation, t, t2))
+    plt.title("FWHM: {0:.2f}, range: {1:.2f}, modulation: {2:.2f}".format(tmp_fwhm, tmp_range, tmp_modulation))
     plt.show()
