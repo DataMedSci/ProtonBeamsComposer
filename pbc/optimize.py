@@ -76,6 +76,9 @@ def optimization_wrapper(input_peaks, target_modulation, target_range, output_di
 
     logger.info("> End of optimization wrapper <")
 
+    logger.warning("Sim iter: {0}".format(res['nit']))
+    logger.warning("END RESULT: {0}".format(test_sobp._flat_plateau_factor_helper()))
+
     return test_sobp
 
 
@@ -246,18 +249,21 @@ def basic_optimization(input_args):
                  target_modulation=desired_modulation,
                  target_range=desired_range,
                  datafile_path=join(output_dir, 'preview_plateau.dat'),
-                 plot_path=join(output_dir, 'preview_plateau.png'))
+                 plot_path=join(output_dir, 'preview_plateau.png'),
+                 display_plot=not input_args.no_plot)
 
     for idx, peak in enumerate(inp_peaks):
         peak.position = corrected_starting_positions[idx]
         peak.weight = 0.1
     inp_peaks[-1].weight = 0.9
 
+    options_for_optimizer = {'maxiter': input_args.nr_iter}
     res_sobp_object = optimization_wrapper(input_peaks=inp_peaks,
                                            target_modulation=desired_modulation,
                                            target_range=desired_range,
                                            output_dir=output_dir,
-                                           disable_plots=input_args.no_plot)
+                                           disable_plots=input_args.no_plot,
+                                           options_for_optimizer=options_for_optimizer)
 
     left_res, right_res = make_precise_end_calculations(res_sobp_object)
 
@@ -285,6 +291,7 @@ def basic_optimization(input_args):
                  target_modulation=desired_modulation,
                  target_range=desired_range,
                  datafile_path=join(output_dir, 'corrected_plateau.dat'),
-                 plot_path=join(output_dir, 'corrected_plateau.png'))
+                 plot_path=join(output_dir, 'corrected_plateau.png'),
+                 display_plot=not input_args.no_plot)
 
     logger.info(">>> Optimization process finished <<<")
