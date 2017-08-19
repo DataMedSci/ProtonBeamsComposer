@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def optimization_wrapper(input_peaks, target_modulation, target_range, output_dir=None, disable_plots=False,
-                         preview_start_plot=False, options_for_optimizer=None):
+                         preview_start_plot=False, options_for_optimizer=None, lang='en'):
     """
     Optimization wrapper.
 
@@ -41,7 +41,8 @@ def optimization_wrapper(input_peaks, target_modulation, target_range, output_di
                   helper_lines=False,
                   plot_path=join(output_dir, 'preview_sobp.png'),
                   display_plot=True,
-                  datafile_path=join(output_dir, 'preview_sobp.dat'))
+                  datafile_path=join(output_dir, 'preview_sobp.dat'),
+                  lang=lang)
 
     time_st = time.time()
     res = test_sobp.optimize_sobp(target_modulation=target_modulation,
@@ -64,7 +65,8 @@ def optimization_wrapper(input_peaks, target_modulation, target_range, output_di
               helper_lines=True,
               plot_path=join(output_dir, 'sobp.png'),
               datafile_path=join(output_dir, 'sobp.dat'),
-              display_plot=not disable_plots)
+              display_plot=not disable_plots,
+              lang=lang)
 
     plot_plateau(sobp_object=test_sobp,
                  target_modulation=target_modulation,
@@ -72,7 +74,8 @@ def optimization_wrapper(input_peaks, target_modulation, target_range, output_di
                  higher=False,
                  plot_path=join(output_dir, 'plateau_zoom.png'),
                  datafile_path=join(output_dir, 'plateau_zoom.dat'),
-                 display_plot=not disable_plots)
+                 display_plot=not disable_plots,
+                 lang=lang)
 
     logger.info("> End of optimization wrapper <")
 
@@ -106,7 +109,7 @@ def basic_optimization(input_args):
         shutil.copy(join('data', 'cydos_new.csv'), join(output_dir, 'bp.dat'))
         logging.debug("Copying peak database ({0}) to output dir as bp.dat.".format('cydos_new.csv'))
     else:
-        x_peak, y_peak = load_data_from_dump(file_name=input_args.input_bp_file, delimiter=input_args.delimeter)
+        x_peak, y_peak = load_data_from_dump(file_name=input_args.input_bp_file, delimiter=input_args.delimiter)
         shutil.copy(input_args.input_bp_file, join(output_dir, 'bp.dat'))
         logging.debug("Copying peak database specified by user ({0}) to output dir as bp.dat.".format(
                       input_args.input_bp_file))
@@ -118,7 +121,7 @@ def basic_optimization(input_args):
         logging.debug("Copying plexi thickness-to-range database ({0}) to output dir as bp.dat.".format('plexi.dat'))
     else:
         plexi_thickness, plexi_range = load_data_from_dump(file_name=input_args.input_bp_file,
-                                                           delimiter=input_args.delimeter)
+                                                           delimiter=input_args.delimiter)
         shutil.copy(input_args.input_plexi_file, join(output_dir, 'plexi.dat'))
         logging.debug("Copying plexi thickness-to-range database specified by user ({0}) to output dir"
                       "as plexi.dat.".format(input_args.input_plexi_file))
@@ -217,7 +220,8 @@ def basic_optimization(input_args):
                                            target_range=desired_range,
                                            output_dir=output_dir,
                                            disable_plots=input_args.no_plot,
-                                           options_for_optimizer=first_opt_dict)
+                                           options_for_optimizer=first_opt_dict,
+                                           lang=input_args.lang)
 
     left_res, right_res = make_precise_end_calculations(res_sobp_object)
 
@@ -250,20 +254,24 @@ def basic_optimization(input_args):
                  target_range=desired_range,
                  datafile_path=join(output_dir, 'preview_plateau.dat'),
                  plot_path=join(output_dir, 'preview_plateau.png'),
-                 display_plot=not input_args.no_plot)
+                 display_plot=not input_args.no_plot,
+                 lang=input_args.lang)
 
     for idx, peak in enumerate(inp_peaks):
         peak.position = corrected_starting_positions[idx]
         peak.weight = 0.1
     inp_peaks[-1].weight = 0.9
 
-    options_for_optimizer = {'maxiter': input_args.nr_iter}
+    options_for_optimizer = {}
+    if input_args.nr_iter:
+        options_for_optimizer = {'maxiter': input_args.nr_iter}
     res_sobp_object = optimization_wrapper(input_peaks=inp_peaks,
                                            target_modulation=desired_modulation,
                                            target_range=desired_range,
                                            output_dir=output_dir,
                                            disable_plots=input_args.no_plot,
-                                           options_for_optimizer=options_for_optimizer)
+                                           options_for_optimizer=options_for_optimizer,
+                                           lang=input_args.lang)
 
     left_res, right_res = make_precise_end_calculations(res_sobp_object)
 
@@ -292,6 +300,7 @@ def basic_optimization(input_args):
                  target_range=desired_range,
                  datafile_path=join(output_dir, 'corrected_plateau.dat'),
                  plot_path=join(output_dir, 'corrected_plateau.png'),
-                 display_plot=not input_args.no_plot)
+                 display_plot=not input_args.no_plot,
+                 lang=input_args.lang)
 
     logger.info(">>> Optimization process finished <<<")

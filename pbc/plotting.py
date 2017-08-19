@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def plot_sobp(start, stop, sobp_object, target_modulation=None, target_range=None, step=0.01, helper_lines=True,
-              plot_path=None, display_plot=True, datafile_path=None):
+              plot_path=None, display_plot=True, datafile_path=None, lang='en'):
     """
     Plot SOBP from given starting point to stop point
 
@@ -37,7 +37,10 @@ def plot_sobp(start, stop, sobp_object, target_modulation=None, target_range=Non
             begin = target_range - target_modulation
             plt.plot([begin, begin], [0, 1], color='yellow')
             plt.plot([target_range, target_range], [0, 1], color='yellow')
-            plt.title("Modulation: {0:.3f}, Range: {1:.3f}".format(mod, ran))
+            if lang == 'pl':
+                plt.title("Modulacja: {0:.3f}, Zasięg: {1:.3f}".format(mod, ran))
+            else:
+                plt.title("Modulation: {0:.3f}, Range: {1:.3f}".format(mod, ran))
 
     plt.plot(plot_domain, sobp_vals, color='red')
 
@@ -59,8 +62,12 @@ def plot_sobp(start, stop, sobp_object, target_modulation=None, target_range=Non
     axes.set_xlim([plot_domain[0], plot_domain[-1]])
     axes.set_ylim([0, 1.1])
 
-    plt.xlabel("Depth in water phantom [mm]")
-    plt.ylabel("Relative dose")
+    if lang == 'pl':
+        plt.xlabel("Głębokośc w fantomie wodnym [mm]")
+        plt.ylabel("Relatywna dawka")
+    else:
+        plt.xlabel("Depth in water phantom [mm]")
+        plt.ylabel("Relative dose")
 
     if plot_path:
         try:
@@ -82,7 +89,7 @@ def plot_sobp(start, stop, sobp_object, target_modulation=None, target_range=Non
 
 
 def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper_lines=True,
-                 plot_path=None, display_plot=True, datafile_path=None, higher=True):
+                 plot_path=None, display_plot=True, datafile_path=None, higher=True, lang='en'):
     """
     Plot SOBP plateau
 
@@ -125,8 +132,12 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
 
     # result plateau
     plt.plot(plateau_domain, plateau, label='SOBP', color='black')
-    plt.title("Modulation (99-90): {0:.3f}, Proximal ({3:.3f}): {1:.3f}, Distal (0.90): {2:.3f}"
-              .format(mod, prox, ran, prox_val))
+    if lang == 'pl':
+        plt.title("Modulacja (99-90): {0:.3f}, Proximal ({3:.3f}): {1:.3f}, Distal (0.90): {2:.3f}"
+                  .format(mod, prox, ran, prox_val))
+    else:
+        plt.title("Modulation (99-90): {0:.3f}, Proximal ({3:.3f}): {1:.3f}, Distal (0.90): {2:.3f}"
+                  .format(mod, prox, ran, prox_val))
 
     fig = plt.gcf()
     fig.set_size_inches(8, 6)
@@ -142,10 +153,12 @@ def plot_plateau(sobp_object, target_modulation, target_range, step=0.01, helper
         axes.set_ylim([0.9875, 1.0125])
         plt.yticks(np.arange(0.9875, 1.0126, 0.0025))
 
-    # plt.xlabel("Głębokośc w fantomie wodnym [mm]")
-    plt.xlabel("Depth in water phantom [mm]")
-    # plt.ylabel("Relatywna dawka")
-    plt.ylabel("Relative dose")
+    if lang == 'pl':
+        plt.xlabel("Głębokośc w fantomie wodnym [mm]")
+        plt.ylabel("Relatywna dawka")
+    else:
+        plt.xlabel("Depth in water phantom [mm]")
+        plt.ylabel("Relative dose")
 
     # extract labels and create legend
     handles, labels = axes.get_legend_handles_labels()

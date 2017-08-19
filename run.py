@@ -22,6 +22,7 @@ if __name__ == '__main__':
     parser.add_argument('-k', '--peaks', type=int, help='if specified, use this as number of peaks in optimization'
                                                         'and omit calculation using Gottschalk rule')
     parser.add_argument('-t', '--nr_iter', type=int)
+    parser.add_argument('--lang', choices=['pl', 'en'], default='en', help="Language for plot labels etc.")
 
     # input files
     parser.add_argument('-i', '--input_bp_file', type=str)
